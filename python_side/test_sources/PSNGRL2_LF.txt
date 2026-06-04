@@ -1,4 +1,0 @@
-     A          R PSNGRR                    PFILE(PSNGRPF)
-     A          K PSGNAME
-     A          K PSGGENDER
-     A          K PSGAGE

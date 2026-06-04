@@ -1,4 +1,0 @@
-     A          R TICKETR                   PFILE(TICKETPF)
-     A          K TKTSTATUS
-     A          K BKID
-     A          K TKTID

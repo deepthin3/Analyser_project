@@ -1,1 +1,0 @@
-     FMYPRTF    O    E             printer oflind(*in32)

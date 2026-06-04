@@ -1,3 +1,0 @@
-     A          R FLIGHTR                   PFILE(FLIGHTPF)
-     A          K FLTSTATUS
-     A          K FLTID

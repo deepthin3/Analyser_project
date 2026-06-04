@@ -1,8 +1,0 @@
-     A          R TICKETR
-     A            TKTID          5A         TEXT('Ticket ID')
-     A            BKID           5A         TEXT('Booking Id  ')
-     A            PSGID          5A         TEXT('Passenger Id')
-     A            TKTSEATNUM     3S 0       TEXT('Seat Num')
-     A            TKTSTATUS      1A         TEXT('Ticket Status')
-     A            TKTREMARK     15A         TEXT('Remark')
-     A          K TKTID

@@ -1,8 +1,0 @@
-     H dftactgrp(*no) actgrp(*new)
-     Dflag             S              3s 0 inz(9)
-      /free
-       dsply 'I AM';
-       flag += 1;
-       DSPLY ('Flag=' + %char(flag)) '*EXT';
-       *inlr = *on;
-      /end-free

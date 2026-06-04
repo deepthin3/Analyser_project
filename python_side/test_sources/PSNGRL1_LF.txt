@@ -1,3 +1,0 @@
-     A          R PSNGRR                    PFILE(PSNGRPF)
-     A          K USRID
-     A          K PSGID

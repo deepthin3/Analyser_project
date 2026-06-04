@@ -1,6 +1,0 @@
-             PGM
-             STRCMTCTL  LCKLVL(*CHG) CMTSCOPE(*JOB)
-             CALL       PGM(TRYADD)
-             ENDCMTCTL
-
- END:        ENDPGM

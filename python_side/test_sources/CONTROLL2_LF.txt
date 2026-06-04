@@ -1,5 +1,0 @@
-     A          R CONTROLR                  PFILE(CONTROLTBL)
-
-     A          K KEYFIELD1
-     A          K KEYFIELD2
-     A          K VALUE

@@ -1,3 +1,0 @@
-     A          R LOGINR                    PFILE(LOGINPF)
-     A          K USERID
-     A          K USERPASS

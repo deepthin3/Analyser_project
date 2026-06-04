@@ -1,4 +1,0 @@
-     A          R GRIEVR                    PFILE(GRIEVPF)
-     A          K USRID
-     A          K FLTID
-     A          K STATUS
