@@ -1,0 +1,31 @@
+{
+  "called_programs": [
+    "TICKETRP",
+    "CONTROLRP",
+    "MSGSFLCL"
+  ],
+  "used_files": [
+    "BOOKINGPF",
+    "BOOKINGL3",
+    "BOOKINGL4",
+    "BOOKINGL5",
+    "FLIGHTPF",
+    "FLIGHTL4",
+    "AIRMASTER",
+    "BOOKINGdspCF",
+    "ALLBKSFL",
+    "AuRBKSFL",
+    "BOOKINL3R",
+    "BOOKINL4R",
+    "BOOKINL5R",
+    "FLIGHTR",
+    "AURBKSFL",
+    "BOOKINGL3",
+    "BOOKINGL4",
+    "BOOKINGL5"
+  ],
+  "submitted_jobs": [],
+  "copybooks": [
+    "SYSCOPYMBR"
+  ]
+}

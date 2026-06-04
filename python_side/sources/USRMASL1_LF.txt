@@ -1,0 +1,3 @@
+     A          R USRMASTR                  PFILE(USERMASTER)
+     A          K USRSTATUS
+     A          K USRID

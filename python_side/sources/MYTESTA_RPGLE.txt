@@ -1,0 +1,20 @@
+     H nomain
+     Dflag             S              1s 0 inz(3)
+     Dsetflag          PR
+     Dcheckflag        PR             1s 0
+     Psetflag          B                   Export
+     Dsetflag          PI
+      /free
+       flag += 1;
+
+       return     ;
+      /end-free
+     Psetflag          E
+     Pcheckflag        B                   Export
+     Dcheckflag        PI             1s 0
+      /free
+
+
+       return flag;
+      /end-free
+     Pcheckflag        E

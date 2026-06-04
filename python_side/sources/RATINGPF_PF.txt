@@ -1,0 +1,7 @@
+     A          R RATINGR
+     A            USRID          5A         TEXT('User ID')
+     A            FLTID          5A         TEXT('Flight ID')
+     A            RATING         1S 0       TEXT('Rating')
+     A            FEEDBACK      50A         TEXT('Feedback')
+     A          K USRID
+     A          K FLTID

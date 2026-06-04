@@ -1,0 +1,22 @@
+             PGM        PARM(&MSGID &MSGF &MSGOPT &PGMQ)
+
+             DCL        VAR(&MSGID) TYPE(*CHAR) LEN(7)
+             DCL        VAR(&MSGF) TYPE(*CHAR) LEN(10)
+             DCL        VAR(&MSGOPT) TYPE(*CHAR) LEN(1)
+             DCL        VAR(&PGMQ) TYPE(*CHAR) LEN(10)
+
+             MONMSG     MSGID(CPF0000) EXEC(GOTO CMDLBL(ERROR))
+/* Display error messages               */
+             IF         COND(&MSGOPT *EQ 'I') THEN(SNDPGMMSG +
+                          MSGID(&MSGID) MSGF(&MSGF) TOPGMQ(*SAME +
+                          (&pgmq   *NONE *NONE)))
+
+             IF         COND(&MSGOPT *EQ 'C') THEN(RMVMSG +
+                          PGMQ(*prv ) CLEAR(*ALL))
+
+
+
+             GOTO       CMDLBL(END)
+ ERROR:      SNDPGMMSG  MSGID(CPF9898) MSGF(QCPFMSG) MSGDTA('"An +
+                          unexpected error occured."')
+ END:        ENDPGM

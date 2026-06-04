@@ -1,0 +1,44 @@
+     A                                      CF03(03 'EXIT')
+     A                                      CF12(12 'CANCEL')
+     A                                      CF05(05 'REFRESH')
+     A          R AIRLNEDSHR
+     A                                  1  2  'User:'
+     A            DUSER         10A  O  1  8TEXT('Logged in user')
+
+     A                                  1 20  'Domestic Flight Booking System'
+     A                                  1 65  'Date:'
+     A            SYSDATE         L  O  1 72
+     A                                      DATFMT(*YMD)
+     A                                      DATSEP('/')
+
+     A                                  2 65  'Time:'
+     A            SYSTIME         T  O  2 72
+     A                                      TIMFMT(*HMS)
+     A                                      TIMSEP(':')
+     A                                  2 29  'ARIANO'
+
+
+     A                                  3  2'-------------------Airline '
+     A                                  3 30'Dashboard-----------------------+
+     A                                       ------------------'
+
+     A                                  8  6  'Type Choice, Press Enter'
+
+     A                                 10 29  '1. Schedule Flights'
+     A                                 11 29  '2. View/Manage Flights'
+     A                                 12 29  '3. Manage Bookings'
+     A                                 13 29  '4. View/Update Profile'
+     A                                 14 29  '5. Change Password'
+
+     A                                 19 29  'Enter Choice:'
+     A*           DCHOICE        1A  B 19 43VALUES(' ' +
+     A*                                            '1')
+     A*                                     EDTCDE(Z)
+     A* Y NUMERIC ONLY, Z SIGNED NUMERIC, EDTCDE WORKS WITH Y TYPE
+     A            DCHOICE        1Y 0B 19 43RANGE(0 5)
+     A
+     A                                      EDTCDE(Z)
+     A*           DCHOICE        2A  B 19 43RANGE('1'  '7')
+     A*
+
+     A                                 23  2'F3=Exit   F5=Refresh   F12=Logout'

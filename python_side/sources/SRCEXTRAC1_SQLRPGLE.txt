@@ -1,0 +1,115 @@
+     **free
+     /* =========================================================== */
+     /* Queries QSYS2.SYSPARTITIONSTAT for all source members       */
+     /* Copies each member to IFS as .txt file using CPYTOSTMF      */
+     /* =========================================================== */
+     ctl-opt dftactgrp(*no) actgrp(*caller) ;
+     dcl-s wlib char(10);
+     dcl-s wSrcpf char(10);
+     dcl-s wMbr char(10);
+     dcl-s wSrcType varchar(10);
+     dcl-s wFromPath varchar(200);
+     dcl-s wToPath varchar(200);
+     dcl-s wFileName varchar(50);
+     dcl-s wCpyCmd varchar(500);
+     dcl-s wCpyCmdSql varchar(500);
+     dcl-s wMsg char(52);
+     dcl-s wDummy char(1);
+     dcl-s wCount packed(5:0);
+     dcl-s wErrCount packed(5:0);
+     dcl-s wlastpos packed(5:0);
+     dcl-s wi packed(5:0);
+     dcl-s char1 char(1);
+     dcl-s wLibraries varchar(200);
+     dcl-s LibrariesArr varchar(10) dim(100);
+     dcl-pi *n;
+         plibraries char(200);
+         pIfsPath char(100);
+     end-pi;
+     // -----------------------------------------------------------
+     // Cursor over all source members in the given libraries
+     // QSYS2.SYSPARTITIONSTAT = IBM i catalog of all file members
+     // SYSTOOLS.SPLIT splits comma string into table of values
+     // so 'LEAVELIB,INVLIB' becomes rows LEAVELIB and INVLIB
+     // -----------------------------------------------------------
+        wLibraries = %TRIM(pLibraries);
+        wLastpos = 1;
+        For wi = 1 TO %len(plibraries);
+           char1 = %subst(plibraries:wi:1);
+           If %subst(plibraries:wi:1) =  ' ';
+              leave;
+           endif;
+             wlastpos = wI;
+        endfor;
+
+        wLibraries = %SUBST(pLibraries : 1 : wLastPos);
+        LibrariesArr = %split(wlibaries: ',') ;
+        eval wCpyCmdSQL =
+        ' SELECT  '                                       +
+        '  TRIM(TABLE_SCHEMA), '                          +
+        '  TRIM(TABLE_NAME), '                            +
+        '  TRIM(SYSTEM_TABLE_MEMBER), '                   +
+        '   TRIM(SOURCE_TYPE)   '                           +
+        '  FROM QSYS2.SYSPARTITIONSTAT A '                  +
+         ' WHERE SOURCE_TYPE IN( '                          +
+         '  ''RPGLE'', ''RPG'', ''SQLRPGLE'', ''CLLE'', ''CLP'', '   +
+         ' ''PF'',''LF'',''DSPF'', ''PRTF'' '                    +
+         ' )           '                                  +
+         ' AND LOCATE( '                                  +
+          '  CONCAT(CONCAT('','', TRIM(A.TABLE_SCHEMA)), '',''),'+
+          '  CONCAT(CONCAT('','',' + ''''                        +
+          %subst(plibraries:1:wLastPos) + '''' +
+          '), '','') '  +
+          '  ) > 0    '                                      +
+          'order by A.TABLE_SCHEMA, A.SOURCE_TYPE, A.SYSTEM_TABLE_MEMBER'  ;
+        // Step 1: Prepare statement from string variable
+        EXEC SQL PREPARE stmt_source FROM :wCpyCmdSQL;
+        exec sql Declare cursor_source_members CURSOR FOR stmt_source;
+        EXEC SQL OPEN cursor_source_members;
+
+
+           DOW SQLCOD = 0;
+             EXEC SQL
+              FETCH cursor_source_members INTO
+               :wLib, :wSrcPf, :wMbr, :wSrcType;
+
+             if sqlcod = 100 OR sqlcod < 0;
+                 Leave;
+             endif;
+
+             IF %TRIM(wMbr) = '';
+                 ITER;
+             endif;
+
+           // Build QSYS IFS path: /QSYS.LIB/LIB.LIB/SRCPF.FILE/MBR.MBR
+             wFromPath = '/QSYS.LIB/' + %TRIM(wLib) + '.LIB/' +
+                           %TRIM(wSrcPf) + '.FILE/' + %TRIM(wMbr) + '.MBR';
+          // Build target path: /home/user/srcanalysis/OIS100_RPGLE.txt
+             wFileName = %TRIM(wMbr) + '_' + %TRIM(wSrcType) + '.txt';
+             wToPath   = %TRIM(pIfsPath) + '/' + wFileName;
+
+
+             wCpyCmd = 'CPYTOSTMF' +
+                       ' FROMMBR(''' + %TRIM(wFromPath) + ''')' +
+                       ' TOSTMF(''' + %TRIM(wToPath) + ''')' +
+                       ' STMFOPT(*REPLACE) CVTDTA(*AUTO) STMFCCSID(1208)';
+
+
+            Monitor;
+              exec sql VALUES(QSYS2.QCMDEXC(:wCpyCmd)) INTO :wDummy;
+              wCount += 1;
+              IF %REM(wCount:10) = 0;
+                 wMsg  = 'Extracted ' + %Char(wCount) + 'members ' ;
+                 DSPLY wMsg;
+              ENDIF;
+            On-error;
+              wErrCount += 1;
+              wMsg  = 'Skipped: ' + %Trim(wMbr)                ;
+            EndMon;
+          Enddo;
+
+          Exec sql CLOSE cursor_source_members;
+          wMsg  = 'Done ' + %Char(wCount) + 'Failed ' + %char(wErrCount);
+          DSPLY wMsg;
+
+          *INLR = *ON;

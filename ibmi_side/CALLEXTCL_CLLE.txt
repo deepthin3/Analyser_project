@@ -1,0 +1,18 @@
+             PGM        PARM(&LIBRARIES)
+
+             DCL        VAR(&LIBRARIES) TYPE(*CHAR) LEN(200)
+             DCL        VAR(&IFSPATH) TYPE(*CHAR) LEN(100) +
+                          VALUE('/home/VAVAN/srcanalysis')
+             DCL        VAR(&QSHCMD) TYPE(*CHAR) LEN(300)
+
+             MONMSG     MSGID(CPF0000) EXEC(GOTO CMDLBL(ERROR))
+             CALL       PGM(VAVAN1/SRCEXTRACT) PARM(&LIBRARIES  +
+                           &IFSPATH)
+             SNDPGMMSG  MSG('Source extraction complete'    ) +
+                          MSGTYPE(*COMP)
+             RETURN
+             ERROR:
+             SNDPGMMSG  MSG('CALLEXTCL failed. Check DSPJOBLOG.' ) +
+                          MSGTYPE(*COMP)
+
+            ENDPGM

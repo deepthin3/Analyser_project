@@ -1,0 +1,6 @@
+     A          R FLIGHTR                   PFILE(FLIGHTPF)
+     A          K FLTORIGIN
+     A          K FLTDEST
+     A          K FLTDEPD
+     A          K FLTSTATUS
+     A          K FLTID

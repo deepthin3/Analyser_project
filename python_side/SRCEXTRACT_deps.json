@@ -1,0 +1,11 @@
+{
+  "called_programs": [
+    "QCMDEXC",
+    "QMHSNDPM"
+  ],
+  "used_files": [
+    "QSYS2.SYSPARTITIONSTAT"
+  ],
+  "submitted_jobs": [],
+  "copybooks": []
+}

@@ -1,0 +1,16 @@
+     A                                      UNIQUE
+     A          R USRMASTR
+     A            USRID          5A         TEXT('User ID')
+     A            USRNAME       20A         TEXT('Name of user')
+     A            USRDOB          L         TEXT('DOB(YYYYMMDD)')
+     A            USRGENDER      1A         TEXT('Gender M, F, O')
+     A            USRMOBNUM     10A         TEXT('Mobile number')
+     A            USREMAIL      50A         TEXT('Email of user')
+     A            USRCITY       20A         TEXT('City of user')
+     A            USRPINCODE     6S 0       TEXT('Pincode of city')
+     A            USRSTATE      20A         TEXT('State of user')
+     A            USRADDRESS   100A         TEXT('Full address')
+     A            USRAADHAR     12S 0       TEXT('Aadhar Number')
+     A            USRSTATUS      1A         TEXT('Status A-I')
+     A            USRREMARK     15A         TEXT('Remark of status')
+     A          K USRID

@@ -1,0 +1,9 @@
+     A                                      UNIQUE
+     A          R PSNGRR
+     A            PSGID          5A         TEXT('Passenger ID')
+     A            USRID          5A         TEXT('User ID')
+     A            PSGNAME       20A         TEXT('Name of passenger')
+     A            PSGGENDER      1A         TEXT('Gender: M/F/O')
+     A            PSGAGE         2S 0       TEXT('Age of passenger')
+     A            PSGRLTN       10A         TEXT('Relation with user')
+     A          K PSGID

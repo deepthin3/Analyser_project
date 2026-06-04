@@ -1,0 +1,11 @@
+
+             DCL        VAR(&UPDATE) TYPE(*CHAR) LEN(7) VALUE('UPDATE')
+             DCL        VAR(&ADD) TYPE(*CHAR) LEN(3) VALUE('ADD')
+             DCL        VAR(&DELETE) TYPE(*CHAR) LEN(6) VALUE('DELETE')
+             DCL        VAR(&DISPLAY) TYPE(*CHAR) LEN(7) VALUE('DISPLAY')
+             DCL        VAR(&LOGIN) TYPE(*CHAR) LEN(5) VALUE('LOGIN')
+             DCL        VAR(&LIST) TYPE(*CHAR) LEN(4) VALUE('LIST')
+             DCL        VAR(&ADMIN) TYPE(*CHAR) LEN(5) VALUE('ADMIN')
+             DCL        VAR(&AIR) TYPE(*CHAR) LEN(7) VALUE('AIRLINE')
+             DCL        VAR(&USER) TYPE(*CHAR) LEN(4) VALUE('USER')
+             DCL        VAR(&MAIN) TYPE(*CHAR) LEN(9) VALUE('MAINSYSCL')

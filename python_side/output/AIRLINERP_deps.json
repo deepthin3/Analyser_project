@@ -1,0 +1,19 @@
+{
+  "called_programs": [
+    "CONTROLRP",
+    "MSGSFLCL"
+  ],
+  "used_files": [
+    "AIRMASTER",
+    "AIRMAS1",
+    "AIRMASTR"
+  ],
+  "display_files": [
+    "AIRLINEDSP"
+  ],
+  "printer_files": [],
+  "submitted_jobs": [],
+  "copybooks": [
+    "SYSCOPYMBR"
+  ]
+}

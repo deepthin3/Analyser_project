@@ -1,0 +1,143 @@
+IBM i Source Code Intelligence
+Program: AIRLINERP
+Library: VAVAN1
+Generated: 2026-06-04 10:09
+============================================================
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PROGRAM: AIRLINERP
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+━━━ WHAT THIS PROGRAM DOES ━━━
+The AIRLINERP program is designed to manage airline information within a larger system, allowing users to add, update, display, and list airlines. It serves as a central interface for airline data management, ensuring that all operations adhere to business rules regarding data integrity and validation. If this program were to stop functioning, users would be unable to manage airline records, leading to outdated or incorrect information in the system, which could disrupt operations and decision-making processes.
+
+━━━ PROGRAM INTERFACE ━━━
+- **CallingMod**  
+  - Direction: INPUT  
+  - Data type and length: CHAR(10)  
+  - Business meaning: "The module from which this program is called, indicating the context of the operation."
+
+- **Action**  
+  - Direction: INPUT  
+  - Data type and length: CHAR(10)  
+  - Business meaning: "The specific action to perform (e.g., add, update, list, display) on the airline data."
+
+- **pairId**  
+  - Direction: INPUT  
+  - Data type and length: CHAR(5)  
+  - Business meaning: "The airline ID that identifies the specific airline record to be processed."
+
+- **pusrId**  
+  - Direction: INPUT  
+  - Data type and length: CHAR(5)  
+  - Business meaning: "The user ID of the individual performing the operation, used for tracking and auditing purposes."
+
+━━━ THE BUSINESS STORY — STEP BY STEP ━━━
+Step 1 — Validate Action and Module  
+  Business: The program begins by validating the action and calling module to ensure they are recognized. This step is crucial as it determines which functionality will be executed. If the action is invalid, the program will not proceed, preventing unauthorized or erroneous operations.  
+  Technical: (valid = VACTIONRP(Action:CallingMod); if valid = 1)
+
+Step 2 — Execute Action  
+  Business: Depending on the validated action (add, update, list, display), the program calls the appropriate subroutine to handle the request. This modular approach allows for clear separation of functionality and ensures that each action is processed correctly.  
+  Technical: (select; when Action = update; exsr updateFun; when Action = list; exsr listFun; ...)
+
+Step 3 — Refresh Screen  
+  Business: After performing an action, the program refreshes the screen to display updated information or clear previous inputs. This ensures users have the latest data and a clean interface for their next actions.  
+  Technical: (exsr refrshScr; Clear NEWALNR; Clear UPDAIRR; ...)
+
+Step 4 — Validate Airline ID  
+  Business: If an airline ID is provided, the program checks its validity by attempting to locate it in the airline master file. This validation is essential to prevent operations on non-existent records, which could lead to data integrity issues.  
+  Technical: (CHAIN(N) kairD AIRMASTR; if %found; validAir = 1;)
+
+Step 5 — Load Subfile for Listing  
+  Business: For the list action, the program populates a subfile with airline records based on the specified status. This allows users to view all relevant airlines and their details in a structured format. If no records are found, appropriate messages are displayed.  
+  Technical: (exsr loadSfl; reade status AIRMAS1 cdspDsL; ...)
+
+Step 6 — Display Airline Details  
+  Business: When displaying an airline's details, the program retrieves the specific record and presents it to the user. This step is critical for users needing to review or verify airline information.  
+  Technical: (chain(N) airId AIRMASTR cdspDs; if %found; exsr dspDspScr;)
+
+Step 7 — Update Airline Information  
+  Business: The update functionality allows users to modify existing airline records. The program validates the inputs and ensures that changes adhere to business rules before committing them to the database.  
+  Technical: (if validAir = 1; chain airId AIRMASTR cdspDs; ...)
+
+Step 8 — Add New Airline  
+  Business: The add functionality enables users to create new airline records. The program generates a unique airline ID and validates the input data to ensure compliance with business rules before saving the new record.  
+  Technical: (exsr genId; if evalid = 1; WRITE AIRMASTR dspDs;)
+
+━━━ FILES AND DATA ━━━
+- **AIRMASTER** | Type: PF | Business meaning: "Contains the master records of all airlines." | How used: Read/Write
+- **AIRMASL1** | Type: LF | Business meaning: "Logical view of the airline master records for display and processing." | How used: Read
+- **AIRLINEDSP** | Type: DSPF | Business meaning: "Display file for managing airline records." | How used: Read/Write
+
+Field names used in the program:
+- AIRID = Airline ID
+- AIRNAME = Name of airline
+- AIRMOBNUM = Helpline number of airline
+- AIREMAIL = Email of airline
+- AIRCOUNT = Airline headquarter city
+- AIRCITY = City of airline headquarters
+- AIRPINCD = Pin code of city
+- AIRSTATE = State of airline headquarters
+- AIRADDR = Full address of airline
+- AIRFLEET = Fleet size of airline
+- AIRESTD = Date of establishment
+- AIRSTATUS = Status of the airline
+
+━━━ PROGRAMS CALLED ━━━
+- **CONTROLRP**  
+  - Trigger: Called during updates when specific fields are modified.  
+  - Business function: Controls the selection of values for certain fields, ensuring they conform to predefined standards.  
+  - Data passed: Various fields related to the airline being updated.  
+  - Data returned: Updated values for the fields.
+
+- **MSGSFLCL**  
+  - Trigger: Called to display messages based on validation results.  
+  - Business function: Manages the display of error or informational messages to the user.  
+  - Data passed: Message ID and parameters for display.  
+  - Data returned: None.
+
+━━━ SQL OPERATIONS ━━━
+- **SQL-1: SELECT**  
+  - Table involved: AIRMASTER  
+  - What it achieves: Retrieves airline records based on the specified ID or status.  
+  - Key WHERE conditions: WHERE AIRID = :airId or status = 'A'  
+  - Variables used: :airId, :status
+
+- **SQL-2: UPDATE**  
+  - Table involved: AIRMASTER  
+  - What it achieves: Updates existing airline records with new information.  
+  - Key WHERE conditions: WHERE AIRID = :airId  
+  - Variables used: :dspDs (record structure)
+
+- **SQL-3: INSERT**  
+  - Table involved: AIRMASTER  
+  - What it achieves: Inserts a new airline record into the database.  
+  - Key WHERE conditions: None (new record)  
+  - Variables used: :dspDs (record structure)
+
+━━━ ERROR HANDLING ━━━
+- **Invalid Action or Module**  
+  - What can go wrong: User attempts to perform an action that is not recognized.  
+  - How the program responds: The program does not proceed and may display an error message.  
+  - User receives: An error message indicating the action is invalid.
+
+- **Airline ID Not Found**  
+  - What can go wrong: The user tries to update or display an airline that does not exist.  
+  - How the program responds: The program will notify the user that the airline ID is invalid.  
+  - User receives: A message indicating the airline ID was not found.
+
+- **Validation Errors**  
+  - What can go wrong: User inputs invalid data during add or update operations.  
+  - How the program responds: The program highlights the errors and prompts the user to correct them.  
+  - User receives: Specific error messages related to each validation failure.
+
+- **Unhandled Errors**  
+  - What can go wrong: System or database errors that are not anticipated.  
+  - How the program responds: The program may terminate unexpectedly or display a generic error message.  
+  - Risk: Lack of specific handling for unexpected errors could lead to data corruption or loss of user trust.
+
+━━━ OVERALL ASSESSMENT ━━━
+The AIRLINERP program is critical for managing airline records within the system. Without it, users would be unable to add, update, or view airline information, leading to significant operational disruptions and potential inaccuracies in the data used for decision-making.
+
+For developers, it is essential to note that the program contains hardcoded values and relies on several external programs for message handling and data control. Careful attention should be paid to validation logic and error handling, as these areas are crucial for maintaining data integrity. Additionally, any modifications should be tested thoroughly to avoid introducing new errors into the system.

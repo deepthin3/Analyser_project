@@ -1,0 +1,2 @@
+     A          R FLIGHTR                   PFILE(FLIGHTPF)
+     A          K AIRID

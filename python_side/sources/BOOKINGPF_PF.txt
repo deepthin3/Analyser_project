@@ -1,0 +1,10 @@
+
+     A          R BOOKINGR
+     A            BKID           5A         TEXT('Booking ID')
+     A            USRID          5A         TEXT('User ID')
+     A            FLTID          5A         TEXT('Flight ID')
+     A            BKDATE          L         TEXT('Booking date')
+     A            BKDEPDATE       L          TEXT('Departure date')
+     A            BKSTATUS       1A         TEXT('Status ÔÇô U/C/P/R/W')
+     A            BKREMARK      15A         TEXT('Remark of status')
+     A          K BKID

@@ -1,0 +1,7 @@
+     A          R CONTROLR
+     A            KEYFIELD1     10A         COLHDG('Key field 1')
+     A            KEYFIELD2     10A         COLHDG('Key field 2')
+     A            VALUE         10A         COLHDG('Value')
+     A            DESCRIPTN     15A         COLHDG('Description')
+     A          K KEYFIELD1
+     A          K KEYFIELD2

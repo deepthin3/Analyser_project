@@ -1,0 +1,23 @@
+     H nomain
+     D/COPY QRPGLESRC,SYSCOPYMBR
+     D vactionrp       pr             1s 0
+     D Action                        10A
+     D CallingMod                    10A
+     P vactionrp       B                   EXPORT
+     D vactionrp       pI             1s 0
+     D Action                        10A
+     D CallingMod                    10A
+     D valid           s              1S 0
+      /free
+       Valid = 1;
+       Select;
+       When Action <> update and Action <> add and Action <> display
+            and Action <> list and Action <> delete and Action <>login;
+            Valid = 0;
+       When CallingMod <> admin and CallingMod <> air and
+            CallingMod <> user and CallingMod <>main;
+            Valid = 0;
+       endSl;
+       return Valid;
+      /end-free
+     P vactionrp       E

@@ -1,0 +1,342 @@
+     A                                      DSPSIZ(24 80 *DS3)
+     A                                      INDARA
+     A                                      PRINT
+     A                                      CF03(03 'Exit')
+     A                                      CF04(04 'Prompt/Inactive/Active')
+     A                                      CF05(05 'Refresh')
+     A                                      CF06(06 'Add')
+     A                                      CF12(12 'Cancel')
+     A                                      REF(FLIGHTPF)
+     A                                      ROLLUP
+     A                                      ROLLDOWN
+
+     A******************************************************************
+      * HEADER AND FOOTER
+     A******************************************************************
+     A          R FLTHDR
+     A                                       OVERLAY
+     A                                  1  2'User:'
+     A            DUSER          5A  O  1  8
+     A                                  1 24'Domestic Flight Booking System'
+     A                                  2 24'ARIANO'
+     A                                  1 65'Date:'
+     A            SYSDATE         L  O  1 71
+     A                                       DATFMT(*YMD)
+     A                                       DATSEP('/')
+     A                                  2 65'Time:'
+     A            SYSTIME         T  O  2 71TIMFMT(*HMS)
+     A                                      TIMSEP(':')
+     A  90                              3  1'------------------------ View Fli+
+     A                                       ghts ----------------------------'
+     A  91                              3  1'------- Schedule Flight ---------'
+     A  92                              3  1'----- Display Flight Details ----'
+     A  93                              3  1'------Update Flight -------------'
+     A  94                              3  1'------ Search Flight ------------'
+     A  95                              3  1'--- Searched Flights ------------'
+     A          R FLTFOOTR
+     A                                       OVERLAY
+     A  92                             23  2'F3=Exit  F12=Cancel'
+     A  90                             23  1'F3-Exit F4=Active/Inactive'
+     A  90                             23  1'F5=Refresh F12=Cancel'
+     A  91                             23  2'F3=Exit   F4=Prompt   F5=Refresh'
+     A  91                             23 32'F6=Schedule Flight   F12=Cancel'
+     A  93                             23  2'F3=Exit   F4=Prompt   F5=Refresh'
+     A  93                             23 32'F6=Update flight F11=Cancel flight'
+     A  93                             23 64'F12=Cancel'
+     A  94                             23  2'F3=Exit F4=Prompt F5=Refresh'
+     A  94                             23 32'F12=Cancel'
+     A  95                             23  2'F3=Exit F5=Refresh F12=Cancel'
+     A  96                             23  2'F3=Exit F6=Book Tickets F12=Cancel'
+     A                                 23  2'F3=Exit F4=Prompt F5=Refresh +
+     A                                       F12=Cancel'
+     A******************************************************************
+      * FLIGHT LIST SUBFILE - ADMIN VIEW
+      ******************************************************************
+     A          R FLTLISTR                   SFL
+     A            DOPT           1A  B 11  1
+     A                                       DSPATR(UL)
+     A  21                                   DSPATR(RI)
+     A            DFLTID    R        O 11  5 REFFLD(FLTID)
+     A            DAIRID    R        O 11 15 REFFLD(AIRID)
+     A            DFLTORIGINR        O 11 23 REFFLD(FLTORIGIN)
+     A            DFLTDEST  R        O 11 45 REFFLD(FLTDEST)
+     A            CFLTSTATUS     8A  O 11 67
+     A*
+     A          R FLTCTLR                    SFLCTL(FLTLISTR)
+     A                                       OVERLAY
+     A                                       SFLPAG(7)
+     A                                       SFLSIZ(100)
+     A  99                                   SFLEND
+     A  70                                   SFLCLR
+     A  71                                   SFLDSP
+     A  72                                   SFLDSPCTL
+     A            SFLRRN         4S 0H
+     A                                  6  2'Type Choice, Press Enter'
+     A                                  7  2'2=Update   5=Display'
+     A*                                 8  1'Opt Flight Id Airline Origin '
+     A                                  8  1'Opt'
+     A                                  8  5'Flight Id'
+     A                                  8 15'Airline'
+     A                                  8 23'Origin'
+     A                                  8 45'Destination'
+     A                                  8 67'Status'
+     A                                  9  1'---'
+     A                                  9  5'---------'
+     A                                  9 15'-------'
+     A                                  9 23'------'
+     A                                  9 45'-----------'
+     A                                  9 67'-------'
+     A                                  5 55'Position To:'
+     A            POSTOID   R        B  5 68 REFFLD(FLTID)
+     A******************************************************************
+      * FLIGHT LIST SUBFILE - AIRLINE VIEW
+     A******************************************************************
+     A          R FLTLISAR                  SFL
+     A            DOPT           1A  B 11  1
+     A  31                                   DSPATR(RI)
+     A            DFLTID    R        O 11  6 REFFLD(FLTID)
+     A            DFLTORIGINR        O 11 16 REFFLD(FLTORIGIN)
+     A            DFLTDEST  R        O 11 30 REFFLD(FLTDEST)
+     A            DFLTSTATUSR        O 11 52 REFFLD(FLTSTATUS)
+
+     A          R FLACTLR                    SFLCTL(FLTLISAR)
+     A                                       SFLPAG(5 )
+     A                                       SFLSIZ(1000)
+     A  99                                   SFLEND
+     A  70                                   SFLCLR
+     A  71                                   SFLDSP
+     A  72                                   SFLDSPCTL
+     A                                       OVERLAY
+     A            SFLRRN         4S 0H
+     A                                  6  2'Type Choice, Press Enter'
+     A                                  7  2'2=Update   5=Display'
+     A                                  8  2'Opt Flight Id Origin Destination '
+     A                                  8 28'Status'
+     A                                  9  2'--- --------- ------------------'
+     A                                  9 28'------'
+     A                                  5 60'Position To:'
+     A            POSTOID   R        B  5 72 REFFLD(FLTID)
+
+     A******************************************************************
+      *FLIGHT ADD SCREEN
+      ******************************************************************
+     A          R NEWFLTR
+     A                                       RTNCSRLOC(&RCD &FLD &POS )
+     A                                       OVERLAY
+     A            RCD           10A  H
+     A            FLD           10A  H
+     A            POS            4S 0H
+
+     A                                  5  2  'Flight ID. . .:'
+     A            DFLTID    R        O  5 18   REFFLD(FLTID)
+     A                                  7  2  'Origin. . . . .:'
+     A            DFLTORIGINR        B  7 18   REFFLD(FLTORIGIN)
+     A                                  7 44  '(F4)'
+     A  41                                     DSPATR(RI)
+     A                                  8  2  'Destination. .:'
+     A            DFLTDEST  R        B  8 18   REFFLD(FLTDEST)
+     A                                  8 44  '(F4)'
+     A  42                                     DSPATR(RI)
+     A                                 10  2  'Aircraft. . . .:'
+     A            DAIRMODEL R        B 10 18  REFFLD(AIRMODEL)
+     A                                 10 44  '(F4)'
+     A  43                                    DSPATR(RI)
+     A                                 10 55  'Range. . . . .:'
+     A            DFLTRANGE R        O 10 71  REFFLD(FLTRANGE)
+     A                                 10 77  'Km'
+     A                                 11  2  'Fuel Cap. . . .:'
+     A            DFLTFUEL  R        B 11 18  REFFLD(FLTFUEL )
+     A                                 11 27  'Lt'
+     A                                 11 55  'Total Seat. . .:'
+     A            DFLTTSEAT R        B 11 71  REFFLD(FLTTSEAT)
+     A                                 13  2  'Departure Date:'
+     A            DFLTDEPD  R        B 13 18  REFFLD(FLTDEPD )
+     A                                 14  2  'Ticket Price. .:'
+     A            DFLTTKPRC R        B 14 18  REFFLD(FLTTKPRC)
+     A                                 14 27  'Rs'
+     A                                 14 55  'Departure Time:'
+     A            DFLTDEPT  R        B 14 71  REFFLD(FLTDEPT )
+
+
+     A******************************************************************
+      * DISPLAY
+      ******************************************************************
+     A          R DSPFLTR
+     A                                       OVERLAY
+     A                                  5  2'Flight Id. . . .:'
+     A            DFLTID    R        O  5 20 REFFLD(FLTID)
+     A                                  5 50'Airline Name. . :'
+     A            DAIRNAME      20A  O  5 70 TEXT('Airline name')
+     A                                  7  2'Origin. . . . . .:'
+     A            DFLTORIGINR        O  7 20 REFFLD(FLTORIGIN)
+     A                                  7 50'Destination. . .:'
+     A            DFLTDEST  R        O  7 70 REFFLD(FLTDEST)
+     A                                  9  2'Aircraft. . . . :'
+     A            DAIRMODEL R        O  9 20 REFFLD(AIRMODEL)
+     A                                  9 50'Total Seats. . :'
+     A            DFLTTSEAT R        O  9 70 REFFLD(FLTTSEAT)
+     A                                 11  2'Range. . . . . .:'
+     A            DFLTRANGE R        O 11 20 REFFLD(FLTRANGE)
+     A                                 11 50'Fuel Capacity. :'
+     A            DFLTFUEL  R        O 11 70 REFFLD(FLTFUEL )
+     A                                 13  2'Status. . . . . :'
+     A            DFLTSTATUSR        O 13 20 REFFLD(FLTSTATUS)
+
+     A******************************************************************
+      * UPDATE
+     A******************************************************************
+     A          R UPDFLTR
+
+     A                                       OVERLAY
+     A                                       RTNCSRLOC(&RCD &FLD &POS )
+     A            RCD           10A  H
+     A            FLD           10A  H
+     A            POS            4S 0H
+     A                                  5  2'Flight ID. . . .:'
+     A            DFLTID    R        O  5 20 REFFLD(FLTID)
+
+     A                                  7  2'Origin. . . . .:'
+     A            DFLTORIGINR        B  7 20 REFFLD(FLTORIGIN)
+     A                                  7 42'(F4)'
+     A  51                                   DSPATR(RI)
+     A                                  7 50'Destination. .:'
+     A            DFLTDEST  R        B  7 65 REFFLD(FLTDEST)
+     A                                  7 77'(F4)'
+     A  52                                   DSPATR(RI)
+     A                                  9  2'Aircraft. . . .:'
+     A            DAIRMODEL R        B  9 20 REFFLD(AIRMODEL)
+     A                                  9 42'(F4)'
+     A  53                                   DSPATR(RI)
+     A                                  9 50'Range. . . . . .:'
+     A            DFLTRANGE R        O  9 65 REFFLD(FLTRANGE)
+     A                                  9 73'Km'
+
+     A                                 11  2'Fuel Cap. . . .:'
+     A            DFLTFUEL  R        B 11 20 REFFLD(FLTFUEL )
+     A                                 11 28'Lt'
+     A                                 11 50'Total Seat. . .:'
+     A            DFLTTSEAT R        B 11 65 REFFLD(FLTTSEAT)
+
+     A                                 13  2'Departure Date:'
+     A            DFLTDEPD  R          13 20 REFFLD(FLTDEPD )
+
+     A                                 14  2'Ticket Price. .:'
+     A            DFLTTKPRC R        B 14 20 REFFLD(FLTTKPRC)
+     A                                 14 28'Rs'
+
+     A                                 13 50'Departure Time:'
+     A            DFLTDEPT  R          13 65 REFFLD(FLTDEPT )
+      ******************************************************************
+      * Cancellation reason window
+      ******************************************************************
+     A          R CNLWNDR
+     A                                       WINDOW(6 10 10 60)
+     A                                       OVERLAY
+     A                                       KEEP
+     A                                  1 25'Confirm Cancellation'
+     A                                  2  2'Mention Reason, Press Enter'
+     A                                  3  2'Press F12=cancel the cancellation'
+     A                                  5  2'Reason. . . . :'
+     A            DFLTREMARKR        B  5 18REFFLD(FLTREMARK)
+     A                                  8  2'F12=Cancel'
+      ******************************************************************
+      * SEARCH FLIGHT- USER VIEW
+      ******************************************************************
+     A          R SRCHFLTR
+     A                                       RTNCSRLOC(&RCD &FLD &POS )
+     A                                       OVERLAY
+     A            RCD           10A  H
+     A            FLD           10A  H
+     A            POS            4S 0H
+
+
+     A                                  5  4  'Enter Details, Press Enter'
+
+     A                                  7 10  'Origin. . . . .:'
+     A            DFLTORIGINR        B  7 30  REFFLD(FLTORIGIN)
+     A N61                                    DSPATR(RI)
+     A                                  7 55  '(F4)'
+
+     A                                  9 10  'Destination. .:'
+     A            DFLTDEST  R        B  9 30  REFFLD(FLTDEST)
+     A N62                                    DSPATR(RI)
+     A                                  9 55  '(F4)'
+
+     A                                 11 10  'Departure Date.:'
+     A            DFLTDEPD  R        B 11 30  REFFLD(FLTDEPD )
+
+
+     A******************************************************************
+      * Searched Flights Subfile and Control Record Format
+      ******************************************************************
+     A          R SRCHLSTR                   SFL
+     A            DOPT           1A  B 14  2
+     A N71                                   DSPATR(RI)
+     A            DFLTID    R        O 14  6 REFFLD(FLTID)
+     A            DAIRNAME      20A  O 14 13 TEXT('Airline Name')
+     A            DFLTTOTDURR        O 14 35 REFFLD(FLTTOTDUR)
+     A            DFLTTKPRC R        O 14 48 REFFLD(FLTTKPRC)
+     A            DFLTRATING     1S 0O 14 56 TEXT('Rating')
+
+     A          R SEARCLCTLR                SFLCTL(SRCHLSTR)
+     A                                      SFLPAG(7 )
+     A                                      OVERLAY
+     A                                      SFLSIZ(1000)
+     A  99                                  SFLEND
+     A  70                                  SFLCLR
+     A  71                                  SFLDSP
+     A  72                                  SFLDSPCTL
+     A            SFLRRN         4S 0H
+     A                                  5  2 'Type Choice, Press Enter'
+     A                                  6  2 '5=Display'
+     A                                  8  2 'Origin. . . . :'
+     A            DFLTORIGINR        B  8 18  REFFLD(FLTORIGIN)
+     A                                  9  2 'Destination.:'
+     A            DFLTDEST  R        O  9 18  REFFLD(FLTDEST)
+     A                                 10 60 'Position To:'
+     A            POSTOID   R        B 10 72  REFFLD(FLTID)
+     A                                 12  2 'Opt Flight ID Airline          +
+                                             Total Duration Price Rating       '
+     A                                 13  2 '--- --------- -------          +
+                                             -------------- ----- ------'
+      ******************************************************************
+      * Searched Flights - Display details
+      ******************************************************************
+
+     A          R SRCFLTDR
+     A                                       OVERLAY
+     A                                  5  2 'Flight ID. . . .:'
+     A            DFLTID    R        O  5 18 REFFLD(FLTID)
+     A                                  5 45 'Airline. . . . .:'
+     A            DAIRID    R        O  5 61 REFFLD(AIRID)
+     A                                  6  2 'Origin. . . . . .:'
+     A            DFLTORIGINR        O  6 18 REFFLD(FLTORIGIN)
+     A                                  6 45 'Destination. . .:'
+     A            DFLTDEST  R        O  6 61 REFFLD(FLTDEST)
+     A                                  7  2 'Aircraft. . . . .:'
+     A            DAIRMODEL R        O  7 18 REFFLD(AIRMODEL)
+     A                                  7 45 'Available Seats.:'
+     A            DFLTTSEAT R        O  7 61 REFFLD(FLTTSEAT)
+     A                                  8  2 'Arrival Time. . .:'
+     A            DFLTARRT  R        O  8 18 REFFLD(FLTARRT )
+     A                                  8 45 'Departure Time. .:'
+     A            DFLTDEPT  R        O  8 61 REFFLD(FLTDEPT )
+     A                                  9  2 'Departure Date. .:'
+     A            DFLTDEPD  R        O  9 18 REFFLD(FLTDEPD )
+     A                                  9 45 'End Time. . . . .:'
+     A            DFLTENDT  R        O  9 61 REFFLD(FLTENDT )
+     A                                 10  2 'Rating. . . . . .:'
+     A            DFLTRATING     1S 0  10 21
+     A            DFLTSTATUSR        O 10 18 REFFLD(FLTSTATUS)
+     A                                 10 45 'Price. . . . . . :'
+     A            DFLTTKPRC R        O 10 61 REFFLD(FLTTKPRC)
+     A                                 11  2 'Cabin Bag. . . . :'
+     A            DFLTCABBG R        O 11 18 REFFLD(FLTCABBG)
+     A                                 11 21 'Kg'
+     A                                 11 45 'Main Luggage. . :'
+     A            DFLTMAINBGR        O 11 61 REFFLD(FLTMAINBG)
+     A                                 11 63 'kg'
+     A                                 12  2 'Total Duration. .:'
+     A            DFLTTOTDURR        O 12 20 REFFLD(FLTTOTDUR)
+     A                                 12 30 'Hr'
+

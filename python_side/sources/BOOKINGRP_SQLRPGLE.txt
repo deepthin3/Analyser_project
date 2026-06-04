@@ -1,0 +1,462 @@
+      *BOOKINGRP - This program has three main functions
+      *1. ListFun - List the bookings.
+      * Called from
+      *Admin Module - Manage users -> 6- View bookings(particular user)
+      *Admin Module - View bookings (View all bookings)
+      *Airline Module - Manage bookings (particular airline)
+      *User Module - Manage bookings (Shows the bookings from the user)
+     Hdftactgrp(*no) actgrp(*caller)
+     HBNDDIR('VAVAN1/MYBNDDIR')
+     FBOOKINGPF IF   E           K DISK    PREFIX(b_)
+     FBOOKINGL3 IF   E           K DISK    PREFIX(b3_)
+     F                                     RENAME(BOOKINGR:BOOKINL3R)
+     FBOOKINGL4 IF   E           K DISK    PREFIX(b4_)
+     F                                     RENAME(BOOKINGR:BOOKINL4R)
+     FBOOKINGL5 IF   E           K DISK    PREFIX(b5_)
+     F                                     RENAME(BOOKINGR:BOOKINL5R)
+     FFLIGHTPF  IF   E           K DISK
+     F                                     PREFIX(F_)
+     FFLIGHTL4  IF   E           K DISK    PREFIX(F4_) RENAME(FLIGHTR:FLIG4)
+     FAIRMASTER IF   E           K DISK    PREFIX(A_)
+     FBOOKINGdspCF   E             WORKSTN SFILE(ALLBKSFL:sflrrn)
+     F                                     SFILE(AuRBKSFL:sflrrn)
+     DLstAll           Ds                  likerec(ALLBKSFL:*all)
+     DLstAur           Ds                  likerec(AuRBKSFL:*all)
+     DLstAllC          Ds                  likerec(ALLBKSCTL:*all)
+     DLstAurC          Ds                  likerec(AURBKSCTL:*all)
+     DLstUsrC          Ds                  likerec(USRBKSCTL:*all)
+     D*
+     D/COPY QRPGLESRC,SYSCOPYMBR
+     Dtemp_airId       S                   LIKE(f_airId)
+     Dvalid            S              1S 0
+     Di                S              2S 0
+     D error           S              1s 0
+     D status          S              1A   INZ('U')
+     D sflrrn          S              4s 0
+     D sflLastrrn      S              4s 0
+     Dmsgid            S             10A
+
+
+     D ticketrp        PR                  EXTPGM('TICKETRP' )
+     D CallingMod2                   10A
+     D Action                        10A   CONST
+     D pAirId                         5A
+     D pusrId                         5A
+     D pfltId                         5A
+     D pbkId                          5A
+     D controlrp       PR                  EXTPGM('CONTROLRP')
+     D keyfield1                     10A
+     D keyfield2                     10A
+     D Value                         10A
+     D vactionrp       pr             1s 0
+     D Action                        10A
+     D CallingMod                    10A
+     DMSGSFLCL         PR                  EXTPGM('MSGSFLCL')
+     DMSGID                           7A
+     DMSGF                           10A   const
+     DMSGOPT                          1A   const
+     DPGMQ                           10A   const
+     C     *ENTRY        PLIST
+     C                   PARM                    CallingMod       10
+     C                   PARM                    Action           10
+     C                   PARM                    pAirId            5
+     C                   PARM                    pusrId            5
+     C                   PARM                    pfltId            5
+     C                   PARM                    pbkId             5
+      /free
+      //main code
+      //if air id is passed as parameter use it
+        PGMQ = 'BOOKINGRP';
+        if pairId <> *blanks;
+           a_airId = pairId;
+           F_airId = pairId;
+        endif;
+        //validate if action and calling module passed from calling program
+        valid = 0;
+        valid = VACTIONRP(Action:CallingMod);
+        if valid = 1;
+          select;
+          when Action = list and CallingMod = admin                     ;
+              exsr ListForAll;
+          when Action = list and CallingMod = user  and pusrId <> *blanks;
+              exsr listForUser;
+          when Action = list and CallingMod = air    ;
+              exsr listForAir;
+           endsl;
+        endif;
+        *inlr = *on;
+        return;
+
+        begsr rfrshLst1;
+         *in = *off;
+         sflrrn = 0;
+         exsr  clrmsgsfl;
+         Clear LstAll;
+         *in80 = *on; //SFLCLR
+         WRITE  ALLBKSCTL;
+         *in80 = *off;
+        endsr;
+
+        begsr loadAsfl;
+         b5_bkStatus = status;
+         if %trim(LstAllC.posToId) <> *blanks;
+            b5_bkid = %trim(LstAllC.posToId);
+            setll (b5_bkStatus: b5_bkId) BOOKINL5R;
+         else;
+            setll (b5_bkStatus) BOOKINL5R;
+         endif;
+         reade (b5_bkStatus ) BOOKINL5R;
+         dow not %eof and sflrrn  < 1000;
+           CHAIN b5_fltId FLIGHTR;
+           if %found;
+             CHAIN  f_airId AIRMASTR;
+             if %found;
+               LstAll.dbkId = b5_bkId;
+               LstAll.dairline = a_airName;
+               LstAll.dfltOrigin = f_fltOrigin;
+               LstAll.dfltDest   = f_fltDest  ;
+               LstAll.DBKDEPDATE   = B5_BKDEPDATE;
+               select;
+                 when b5_bkStatus = 'U';
+                   LstAll.cBKstatus = 'Upcoming';
+                 when b5_bkStatus = 'C';
+                   LstAll.cBKstatus = 'Completed';
+                 when b5_bkStatus = 'P';
+                   LstAll.cbKstatus = 'Completed';
+               endsl;
+              sflrrn += 1;
+              write ALLBKSFL LstAll ;
+              endif;
+             endif;
+            reade (b5_bkStatus ) BOOKINL5R;
+           enddo;
+        sflLastrrn = sflrrn;
+        if sflrrn >=1;
+          *in81 = *on; //SFLDSP = *ON
+          *in82 = *on; //SFLDSPCTL = *ON
+        else;
+          *in81 = *off; //SFLDSP = *OFF
+          *in82 = *on; //SFLDSPCTL = *ON
+          write NORCDR;
+        endif;
+        if %eof(BOOKINGL5);
+           *in99 = *on;  // SFLEND
+        else;
+           *in99 = *off;
+        endif;
+        endsr;
+
+        //Called from Admin module - All the bookings
+        begsr  ListForAll;
+         error = 0;
+         status = 'U'     ;
+         DoW *IN03 = *OFF;
+           if error = 0;
+              exsr rfrshLst1; //clear subfile
+              exsr loadASfl; //load subfile
+           endif;
+           *in90 = *on;
+           *in60 = *on;
+           exsr dspHdrFtr;
+           write BKERRCTL;
+           //LstAllC.csrpos = 1     ;
+           if i = 0;
+             LstAllC.csrpos = 1     ;
+           else;
+             LstAllC.csrpos = i;
+           endif;
+           exFMT ALLBKSCTL LstAllC; //writing the sflctl recordformat
+           if *in03 = *on or *in12 = *on;
+              leave;
+           endif;
+           if *in04 = *on;
+              if status = 'U';
+                 status = 'P';
+              elseif status = 'P';
+                 status = 'C';
+              else;
+                 status = 'U';
+              endif;
+              iter;
+           endif;
+           if *in05 = *on;
+              LstAllC.postoid = *blanks;
+              iter;
+           endif;
+           error = 0;
+           for i = 1 to sflLastRrn;
+               readc ALLBKSFL LstAll;
+               //LstAllC.csrorn = i     ;
+               if %eof();
+                  leave;
+               endif;
+               *in83 = *off;
+               //if dOpt = '2';
+                 // F_fltId = F3_fltId;
+                 // exsr UpdfltFun;
+                 If LstAll.dOpt = '5';
+                  callp TICKETRP (CallingMod:list  :pAirId:pusrId:pfltId
+                                                            :LstAll.dbkId );
+                 // F_fltId = F3_fltId;
+                 // exsr DspFltFun;
+
+                 else;
+                  *in83 = *on; //setting on the reverse image
+                  MSGID = 'UAR0013';
+                  EXSR showmsg;
+                  update ALLBKSFL LstAll;
+                  error = 1;
+               endif;
+             endfor;
+           enddo;
+        endsr;
+
+        begsr rfrshLst2;
+         *in = *off;
+         sflrrn = 0;
+         exsr  clrmsgsfl;
+         Clear LstAur;
+         *in80 = *on; //SFLCLR
+         WRITE  AurBKSCTL;
+         *in80 = *off;
+        endsr;
+
+        begsr loadAirsfl;
+         f4_airId    = pairId;
+         temp_airId    = *blanks;
+         setll f4_airId FLIG4;
+         reade f4_airId FLIG4;
+         dow not %eof;
+            if temp_airId <> f4_airId;
+               b4_bkStatus = status;
+               b4_fltId = f4_fltId;
+               if %trim(LstAurC.posToId) <> *blanks;
+                 b4_bkid = %trim(LstAurC.posToId);
+                 setll (b4_bkStatus:b4_fltId:b4_bkId) BOOKINL4R;
+               else;
+                 setll (b4_bkStatus:b4_fltId) BOOKINL4R;
+               endif;
+               reade (b4_bkStatus :b4_fltId) BOOKINL4R;
+               dow not %eof and sflrrn  < 1000;
+                 CHAIN b4_fltId FLIGHTR;
+                 if %found;
+                  CHAIN  f_airId AIRMASTR;
+                  if %found;
+                   LstAur.dbkId = b4_bkId;
+                   LstAur.dfltorigin= f_fltOrigin;
+                   LstAur.dfltDest   = f_fltDest  ;
+                   LstAur.DBKDEPDATE   = B4_BKDEPDATE;
+                   select;
+                   when b4_bkStatus = 'U';
+                    LstAur.cBKstatus = 'Upcoming';
+                   when b4_bkStatus = 'C';
+                    LstAur.cBKstatus = 'Completed';
+                   when b4_bkStatus = 'P';
+                    LstAur.cbKstatus = 'Completed';
+                   endsl;
+                   sflrrn += 1;
+                   write AurBKSFL LstAur ;
+                 endif;
+               endif;
+            reade (b4_bkStatus :b4_fltId) BOOKINL4R;
+           enddo;
+         endif;
+         reade f4_airId FLIG4;
+        enddo;
+        sflLastrrn = sflrrn;
+        if sflrrn >=1;
+          *in81 = *on; //SFLDSP = *ON
+          *in82 = *on; //SFLDSPCTL = *ON
+        else;
+          *in81 = *off; //SFLDSP = *OFF
+          *in82 = *on; //SFLDSPCTL = *ON
+          write NORCDR;
+        endif;
+        if %eof(BOOKINGL4);
+           *in99 = *on;  // SFLEND
+        else;
+           *in99 = *off;
+        endif;
+        endsr;
+
+        //Called from Admin module - All the bookings
+        begsr  ListForAir;
+         error = 0;
+         status = 'U'     ;
+         DoW *IN03 = *OFF;
+           if error = 0;
+              exsr rfrshLst2; //clear subfile
+              exsr loadAirSfl; //load subfile
+           endif;
+           *in91 = *on;
+           *in60 = *on;
+           exsr dspHdrFtr;
+           write BKERRCTL;
+           exFMT AurBKSCTL LstAurC; //writing the sflctl recordformat
+           if *in03 = *on or *in12 = *on;
+              leave;
+           endif;
+           if *in04 = *on;
+              if status = 'U';
+                 status = 'P';
+              elseif status = 'P';
+                 status = 'C';
+              else;
+                 status = 'U';
+              endif;
+              iter;
+           endif;
+           if *in05 = *on;
+              LstAurC.postoid = *blanks;
+              iter;
+           endif;
+           error = 0;
+           for i = 1 to sflLastRrn;
+               readc AurBKSFL LstAur;
+               if %eof();
+                  leave;
+               endif;
+               *in63 = *off;
+               //if LstAur.dOpt = '2';
+                 // F_fltId = F3_fltId;
+                 // exsr UpdfltFun;
+               If LstAur.dOpt = '5';
+                  callp TICKETRP (CallingMod: list :pAirId:pusrId:pfltId
+                                                            :LstAur.dbkId );
+                 // F_fltId = F3_fltId;
+                 // exsr DspFltFun;
+
+               else;
+                *in63 = *on; //setting on the reverse image indicator for
+                MSGID = 'UAR0013';
+                EXSR showmsg;
+                update AurBKSFL LstAur;
+                error = 1;
+               endif;
+             endfor;
+           enddo;
+        endsr;
+
+
+        begsr loadUsrsfl;
+         b3_bkstatus = status;
+         b3_usrid      = pUsrId ;
+         if %trim(LstAurC.posToId) <> *blanks;
+           b3_bkid = %trim(LstAurC.posToId);
+           setll (b3_bkStatus:b3_usrId:b3_bkId) BOOKINL3R;
+         else;
+           setll (b3_bkStatus:b3_usrId) BOOKINL3R;
+         endif;
+         reade (b3_bkStatus :b3_usrId) BOOKINL3R;
+         dow not %eof and sflrrn  < 1000;
+             CHAIN b3_fltId FLIGHTR;
+                 if %found;
+                  CHAIN  f_airId AIRMASTR;
+                  if %found;
+                   LstAur.dbkId = b3_bkId;
+                   LstAur.dfltorigin= f_fltOrigin;
+                   LstAur.dfltDest   = f_fltDest  ;
+                   LstAur.DBKDEPDATE   = B3_BKDEPDATE;
+                   select;
+                   when b3_bkStatus = 'U';
+                    LstAur.cBKstatus = 'Upcoming';
+                   when b3_bkStatus = 'C';
+                    LstAur.cBKstatus = 'Completed';
+                   when b3_bkStatus = 'P';
+                    LstAur.cbKstatus = 'Completed';
+                   endsl;
+                   sflrrn += 1;
+                   write AurBKSFL LstAur ;
+                 endif;
+               endif;
+            reade (b3_bkStatus :b3_usrId) BOOKINL3R;
+           enddo;
+        sflLastrrn = sflrrn;
+        if sflrrn >=1;
+          *in81 = *on; //SFLDSP = *ON
+          *in82 = *on; //SFLDSPCTL = *ON
+        else;
+          *in81 = *off; //SFLDSP = *OFF
+          *in82 = *on; //SFLDSPCTL = *ON
+          write NORCDR;
+        endif;
+        if %eof(BOOKINGL3);
+           *in99 = *on;  // SFLEND
+        else;
+           *in99 = *off;
+        endif;
+        endsr;
+
+        //Called from User  module - All the bookings for user
+        begsr  listForUser;
+         error = 0;
+         status = 'U'     ;
+         DoW *IN03 = *OFF;
+           if error = 0;
+              exsr rfrshLst2; //clear subfile
+              exsr loadUsrSfl; //load subfile
+           endif;
+           *in91 = *on;
+           *in60 = *on;
+           exsr dspHdrFtr;
+           write BKERRCTL;
+           exFMT AurBKSCTL LstAurC; //writing the sflctl recordformat
+           if *in03 = *on or *in12 = *on;
+              leave;
+           endif;
+           if *in04 = *on;
+              if status = 'U';
+                 status = 'P';
+              elseif status = 'P';
+                 status = 'C';
+              else;
+                 status = 'U';
+              endif;
+              iter;
+           endif;
+           if *in05 = *on;
+              LstAurC.postoid = *blanks;
+              iter;
+           endif;
+           error = 0;
+           for i = 1 to sflLastRrn;
+               readc AurBKSFL LstAur ;
+               if %eof();
+                  leave;
+               endif;
+               *in63 = *off;
+               //if dOpt = '2';
+                 // F_fltId = F3_fltId;
+                 // exsr UpdfltFun;
+                 If LstAur.dOpt = '5';
+                 // F_fltId = F3_fltId;
+                 // exsr DspFltFun;
+                  callp TICKETRP (CallingMod:list  :pAirId:pusrId:pfltId
+                                                           :LstAur.dbkId );
+               else;
+                *in63 = *on; //setting on the reverse image indicator for
+                MSGID = 'UAR0013';
+                EXSR showmsg;
+                update AurBKSFL LstAur;
+                error = 1;
+               endif;
+             endfor;
+           enddo;
+        endsr;
+       begsr dspHdrFtr;
+        sysdate = %date();
+        systime = %time();
+        dUser = pusrId;
+        WRITE BKHDR;
+        WRITE BKFOOTR;
+       endsr;
+        begsr  refrshScr;
+        endsr;
+       begsr showmsg;
+
+               callp msgsflcl(MSGID:'AIRERRMSGF':'I':PGMQ);
+        endsr;
+       begsr clrmsgsfl;
+
+               callp msgsflcl(MSGID:'AIRERRMSGF':'C':PGMQ);
+        endsr;

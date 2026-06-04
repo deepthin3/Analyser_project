@@ -1,0 +1,192 @@
+     /* =========================================================== */
+     /* Queries QSYS2.SYSPARTITIONSTAT for all source members       */
+     /* Copies each member to IFS as .txt file using CPYTOSTMF      */
+     /* =========================================================== */
+     Hdftactgrp(*no) actgrp(*caller)
+     D wlib            S             10
+     D wSrcpf          S             10
+     D wMbr            S             10
+     D wSrcType        S             10    VARYING
+     D wFromPath       S            200    VARYING
+     D wToPath         S            200    VARYING
+     D wFileName       S             50    VARYING
+     D wlibrary        S             10
+     D wCmd            S            500
+     D Cmdlen          S             15p 5
+     D wMsg            S             52
+     D wEscMsg         S            100
+     D wDummy          S              1
+     D wCount          S              5S 0
+     D wErrCount       S              5S 0
+     D wlastpos        S              5S 0
+     D wlibrariesIdx   S              5S 0
+     D wArrSize        S              5S 0
+     D wLibExists      S              1N
+     D wi              S              5S 0
+     D char1           S              1
+     D wLibraries      S            200    VARYING
+     D LibrariesArr    S             10    VARYING DIM(10)
+      *
+     D SendEscMsg      pr                  extpgm('QMHSNDPM')
+     D   MsgID                        7    const
+     D   MsgFile                     20    const
+     D   MsgDta                      80    const
+     D   MsgDtaLen                   10i 0 const
+     D   MsgType                     10    const
+     D   MsgQ                        10    const
+     D   MsgQNbr                     10i 0 const
+     D   MsgKey                       4
+     D   ErrorDS                     16
+      *
+     D ErrorDS         ds            16
+     D   BytesProv                   10i 0 inz(16)
+     D   BytesAvail                  10i 0
+     D   ExceptionID                  7
+      *
+     D MsgDta          s             80
+     D MsgKey          s              4
+     D MsgTextLen      s             10s 0
+      *
+     C     *ENTRY        PLIST
+     C                   PARM                    plibraries      200
+     C                   PARM                    pIfsPath        100
+     /* ----------------------------------------------------------- */
+     /* Cursor over all source members in the given libraries       */
+     /* QSYS2.SYSPARTITIONSTAT = IBM i catalog of all file members  */
+     /* SYSTOOLS.SPLIT splits comma string into table of values     */
+     /* so 'LEAVELIB,INVLIB' becomes rows LEAVELIB and INVLIB       */
+     /* ----------------------------------------------------------- */
+      //free
+        // get the actual length of plibraries - library list string
+        //                                      seperated with ','
+        // this is used while creating the SQL statement
+        wLibraries = %TRIM(pLibraries);
+        wLastpos = 1;
+        For wi = 1 TO %len(plibraries);
+           char1 = %subst(plibraries:wi:1);
+           If %subst(plibraries:wi:1) =  ' ';
+              leave;
+           endif;
+             wlastpos = wI;
+        endfor;
+
+        // Check if atleast any one of the library exists
+        // else return to CL program with continuing further
+        wLibraries = %SUBST(pLibraries : 1 : wLastPos);
+        LibrariesArr = %split(wlibraries: ',') ;
+        wArrSize = %elem(LibrariesArr);
+        wlibrariesidx = 1;
+        wlibexists = *off;
+
+        dow wlibrariesIdx <= wArrSize and wlibexists = *off;
+           wLibrary = %trim(LibrariesArr(wlibrariesidx));
+           if wLibrary <> *blanks;
+              monitor;
+                 Clear wCmd ;
+                 wCmd    = 'CHKOBJ OBJ(QSYS/'     + %trim(wlibrary) +
+                            ') OBJTYPE(*LIB)';
+                 CmdLen = %len(%trim(wCmd));
+       //end-free
+     C                   CALL      'QCMDEXC'
+     C                   PARM                    wCmd
+     C                   PARM                    Cmdlen
+       //free
+                 wlibexists = *On;
+              on-error;
+                 //Library not found
+              endmon;
+           endif;
+           wlibrariesIdx +=1 ;
+         enddo;
+        if wlibexists = *off;
+           MsgDta  = 'None of the specified' +
+                      'libraries exist.';
+           MsgTextLen =  %len(MsgDta) ;
+       //end-free
+     C                   CALLp     SendEscMsg ('CPF9898':
+     C                              'QCPFMSG   QSYS':
+     C                              MsgDta:
+     C                              MsgTextLen:
+     C                              '*ESCAPE':
+     C                              '*':
+     C                              2:
+     C                              MsgKey:
+     C                              ErrorDs)
+       //free
+       endif;
+
+       // from catalog table for each of the input libraries get details
+       // of sources Library, Source pf, Source name, Source type
+        wCmd = *blanks;
+        eval wCmd       =
+        ' SELECT  '                                       +
+        '  TRIM(TABLE_SCHEMA), '                          +
+        '  TRIM(TABLE_NAME), '                            +
+        '  TRIM(SYSTEM_TABLE_MEMBER), '                   +
+        '   TRIM(SOURCE_TYPE)   '                           +
+        '  FROM QSYS2.SYSPARTITIONSTAT A '                  +
+         ' WHERE SOURCE_TYPE IN( '                          +
+         '  ''RPGLE'', ''RPG'', ''SQLRPGLE'', ''CLLE'', ''CLP'', '   +
+         ' ''PF'',''LF'',''DSPF'', ''PRTF'' '                    +
+         ' )           '                                  +
+         ' AND LOCATE( '                                  +
+          '  CONCAT(CONCAT('','', TRIM(A.TABLE_SCHEMA)), '',''),'+
+          '  CONCAT(CONCAT('','',' + ''''                        +
+          %subst(plibraries:1:wLastPos) + '''' +
+          '), '','') '  +
+          '  ) > 0    '                                      +
+          'order by A.TABLE_SCHEMA, A.SOURCE_TYPE, A.SYSTEM_TABLE_MEMBER'  ;
+        // Step 1: Prepare statement from string variable
+        EXEC SQL PREPARE stmt_source FROM :wCmd      ;
+        exec sql Declare cursor_source_members CURSOR FOR stmt_source;
+        EXEC SQL OPEN cursor_source_members;
+
+
+           DOW SQLCOD = 0;
+             EXEC SQL
+              FETCH cursor_source_members INTO
+               :wLib, :wSrcPf, :wMbr, :wSrcType;
+
+             if sqlcod = 100 OR sqlcod < 0;
+                 Leave;
+             endif;
+
+             IF %TRIM(wMbr) = '';
+                 ITER;
+             endif;
+
+           // Build QSYS IFS path: /QSYS.LIB/LIB.LIB/SRCPF.FILE/MBR.MBR
+             wFromPath = '/QSYS.LIB/' + %TRIM(wLib) + '.LIB/' +
+                           %TRIM(wSrcPf) + '.FILE/' + %TRIM(wMbr) + '.MBR';
+          // Build target path: /home/user/srcanalysis/OIS100_RPGLE.txt
+             wFileName = %TRIM(wMbr) + '_' + %TRIM(wSrcType) + '.txt';
+             wToPath   = %TRIM(pIfsPath) + '/' + wFileName;
+
+
+             wCmd = *blanks;
+         //Copy the sources to IFS path
+             wCmd = 'CPYTOSTMF' +
+                       ' FROMMBR(''' + %TRIM(wFromPath) + ''')' +
+                       ' TOSTMF(''' + %TRIM(wToPath) + ''')' +
+                       ' STMFOPT(*REPLACE) CVTDTA(*AUTO) STMFCCSID(1208)';
+
+
+            Monitor;
+              exec sql VALUES(QSYS2.QCMDEXC(:wCmd   )) INTO :wDummy;
+              wCount += 1;
+              IF %REM(wCount:10) = 0;
+                 wMsg  = 'Extracted ' + %Char(wCount) + 'members ' ;
+                 DSPLY wMsg;
+              ENDIF;
+            On-error;
+              wErrCount += 1;
+              wMsg  = 'Skipped: ' + %Trim(wMbr)                ;
+            EndMon;
+          Enddo;
+
+          Exec sql CLOSE cursor_source_members;
+          wMsg  = 'Done ' + %Char(wCount) + 'Failed ' + %char(wErrCount);
+          DSPLY wMsg;
+          return;
+          *INLR = *ON;
+       //end-free

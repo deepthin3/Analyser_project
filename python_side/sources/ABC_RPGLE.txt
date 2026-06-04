@@ -1,0 +1,36 @@
+     **free
+     /* =========================================================== */
+     /* Queries QSYS2.SYSPARTITIONSTAT for all source members       */
+     /* Copies each member to IFS as .txt file using CPYTOSTMF      */
+     /* =========================================================== */
+     ctl-opt dftactgrp(*no) actgrp(*caller) ;
+     dcl-s wlib char(10);
+     dcl-s wSrcpf char(10);
+     dcl-s wMbr char(10);
+     dcl-s wSrcType varchar(10);
+     dcl-s wFromPath varchar(200);
+     dcl-s wToPath varchar(200);
+     dcl-s wFileName varchar(50);
+     dcl-s wCpyCmd varchar(500);
+     dcl-s wCpyCmdSql varchar(500);
+     dcl-s wMsg char(52);
+     dcl-s wDummy char(1);
+     dcl-s wCount packed(5:0);
+     dcl-s wErrCount packed(5:0);
+     dcl-s wlastpos packed(5:0);
+     dcl-s wi packed(5:0);
+     dcl-s char1 char(1);
+     dcl-s wLibraries varchar(200);
+     dcl-s LibrariesArr varchar(10) dim(100);
+     dcl-pi *n;
+         plibraries char(200);
+         pIfsPath char(100);
+     end-pi;
+     // -----------------------------------------------------------
+     // Cursor over all source members in the given libraries
+     // QSYS2.SYSPARTITIONSTAT = IBM i catalog of all file members
+     // SYSTOOLS.SPLIT splits comma string into table of values
+     // so 'LEAVELIB,INVLIB' becomes rows LEAVELIB and INVLIB
+     // -----------------------------------------------------------
+
+          *INLR = *ON;

@@ -1,0 +1,3 @@
+     A          R GRIEVR                    PFILE(GRIEVPF)
+     A          K STATUS
+     A          K GRVID

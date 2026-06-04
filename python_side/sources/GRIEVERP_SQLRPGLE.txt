@@ -1,0 +1,426 @@
+     Hdftactgrp(*no) actgrp(*caller)
+     HBNDDIR('VAVAN1/MYBNDDIR')
+     FGRIEVpf   UF   E           K DISK    PREFIX(g_)
+     FGRIEVl1   UF A E           k DISK    PREFIX(g1_)
+     F                                     RENAME(GRIEVR:GRIEV1)
+     FGRIEVl2   iF   E           k DISK    PREFIX(g2_)
+     F                                     RENAME(GRIEVR:GRIEV2)
+     Fbookingpf IF   E           k DISK    PREFIX(b_)
+     Fflightpf  IF   E           k DISK    PREFIX(f_)
+     FusermasterIF   E           k DISK    PREFIX(u_)
+     Fairmaster IF   E           k DISK    PREFIX(a_)
+     FGRIEVEDSPFCF   E             WORKSTN sfile(COMPSFLR:sflrrn)
+     D/COPY QRPGLESRC,SYSCOPYMBR
+     DMSGSFLCL         PR                  EXTPGM('MSGSFLCL')
+     DMSGID                           7A
+     DMSGF                           10A   const
+     DMSGOPT                          1A   const
+     DPGMQ                           10A   const
+     DCallingMod2      S             10A
+     DAction2          S             10A
+     D Found           S              1S 0
+     D valid           S              1S 0
+     D validstatus     S              1S 0
+     D pvalue          S             10a
+     D sflrrn          S              4S 0
+     D sfllastrrn      S              4S 0
+     D status          S              1A   INZ('P')
+     D pos             S              2S 0
+     D error           S              1S 0
+     D tempid          S              4A
+     D MSGID           S              7A
+     D PGMQ            S             10A
+     D tempid3         S              4A
+     D tempid4         S              5A
+     D tempid1         S              4S 0
+     D tempid2         S              4S 0
+     D pstatus         S             10
+     D controlrp       pr                  EXTPGM('CONTROLRP')
+     D pkeyfld1                      10    const
+     D Pkeyfld2                      10    const
+     D Pstatus                       10
+     D Action2                       10A
+     D CallingMod2                   10A
+     D pUsrId                         5A
+     D vactionrp       pr             1s 0
+     D Action                        10A
+     D CallingMod                    10A
+     DdAddDs           Ds                  LIKEREC(REGCOMPR:*All)
+     DdList            Ds                  LIKEREC(compsflR:*All)
+     DdListc           Ds                  LIKEREC(compsflc:*All)
+     Ddupd             Ds                  LIKEREC(updcompr:*All)
+     Dddsp             Ds                  LIKEREC(dspcompr:*All)
+     C     *ENTRY        PLIST
+     C                   PARM                    CallingMod       10
+     C                   PARM                    Action           10
+     C                   PARM                    pAirId            5
+     C                   PARM                    pusrId            5
+     C                   PARM                    pfltId            5
+     C                   PARM                    pbkId             5
+      /free
+      //Main code
+        valid = 0;
+        PGMQ = 'GRIEVERP';
+        valid = vactionrp(Action: CallingMod);
+        if valid = 1;
+          select;
+            when Action = add;
+              exsr addfun;
+            when Action = list And CallingMod = admin;
+              exsr listfun;
+          endsl;
+        endif;
+        *inlr = *on;
+        return;
+
+        begsr dsphdrftr;
+         duser = pusrId;
+         sysdate = %date();
+         systime = %time();
+         WRITE GRVHDR ;
+         WRITE GRVFOOTR;
+        endsr;
+        begsr rfrshadd;
+         clear dAddDs;
+         exsr clrmsgsfl;
+         *in = *off;
+        endsr;
+        begsr rfrshlist;
+           *in80 = *on;
+           exsr clrmsgsfl;
+           write COMPSFLC; //SFLCLR
+           *in80 = *off;
+           *in91 = *off;
+           *in92 = *off;
+           *in93 = *off;
+           *in94 = *on;
+        endsr;
+        begsr loadComp ;
+        sflrrn = 0;
+        if dlistC.postoid <> *blanks;
+           setll (status:dlistC.postoid) GRIEV2;
+        else;
+           setll status GRIEV2;
+        endif;
+        REade status GRIEV2;
+        dow not %eof;
+          sflrrn = sflrrn + 1;
+          dlist.dopt = *blanks;
+          dlist.DGRVID = g2_GRVID;
+          dlist.DFLTID = g2_FLTID;
+          chain g2_fltid FLIGHTPF;
+          if %found;
+           chain F_airid airmastr;
+           if %found;
+            dlist.dAIRNAME = a_AIRNAME;
+           endif;
+          ENDIF;
+          chain g2_usrid usrmastr;
+          if %found;
+             dlist.DUSRNAME = u_USRNAME;
+          endif;
+          if G2_STATUS = 'P';
+             dlist.CSTATUS = 'Pending';
+          else;
+             dlist.CSTATUS = 'Resolved';
+          ENDIF;
+          write COMPSFLR dlist;
+        REade status GRIEV2;
+        enddo;
+        if %eof(GRIEVl2);
+          *in99 = *on;
+        else;
+          *in99 = *off;
+        endif;
+        sfllastrrn = sflrrn;
+        if sflrrn > 0;
+          *in81 = *on;
+          *in82 = *on;
+        else;
+          *in81 = *off;
+          *in82 = *on;
+          write NORCDR;
+        endif;
+        endsr;
+        begsr listfun;
+         dow *in03 = *off;
+           if error = 0;
+             exsr rfrshlist;
+             exsr loadComp;
+           endif;
+           exsr dsphdrftr;
+           write GRIEVERRC;
+           exfmt COMPSFLC dlistc;
+           if *in03 = *on OR  *in12 = *on;
+             leave;
+           endif;
+           if *in05 = *on and error = 0;
+             dlistC.postoid = *blanks;
+             iter;
+           endif;
+           if *in04 = *on;
+             if status = 'P';
+              status = 'R';
+             else;
+              status = 'P';
+             endif;
+             iter;
+           endif;
+           exsr clrmsgsfl;
+           error = 0;
+           *in31 = *off;
+           readc COMPSFLR dlist;
+           Dow not %eof;
+            if dlist.dopt = '2';
+               exsr updFun;
+            elseif dlist.dopt = '5';
+               exsr dspFun;
+            else;
+               *in31 = *on;
+               error = 1;
+               MSGID = 'UAR0013';
+               exsr showmsg;
+               UPDATE COMPSFLR dlist;
+               leave;
+           endif;
+           readc COMPSFLR dlist;
+         enddo;
+         enddo;
+        endsr;
+        begsr rfrshUpd;
+         //*in93 = *off;
+         //*in94 = *off;
+         //*in91 = *off;
+         *in = *off;
+         *in92 = *on;
+         exsr clrmsgsfl;
+         clear dupd;
+        endsr;
+        begsr rfrshdsp;
+         //*in93 = *off;
+         //*in94 = *off;
+         //*in91 = *off;
+         *in = *off;
+         *in93 = *on;
+         exsr clrmsgsfl;
+         clear ddsp;
+        endsr;
+        begsr updfun;
+          Found = 1 ;
+          error = 0 ;
+          exsr rfrshUpd;
+          chain dlist.DGRVID GRIEVR;
+          If %found;
+            dupd.dGRVID = g_grvid;
+            chain g_usrid usrmastr;
+            if %found;
+              dupd.dusrname = u_usrname;
+            endif;
+            dupd.dfltID = g_fltid;
+            chain g_fltid flightr   ;
+            if %found;
+              chain f_airid airmastr  ;
+              if %found;
+                 dupd.dairname = a_airname;
+              endif;
+             endif;
+               //dupd.dbkid = g_bkid;
+             dupd.dfltdepd = f_fltdepd;
+             dupd.dfltorigin = f_fltorigin;
+             dupd.dfltdest   = f_fltdest  ;
+             dupd.ccomplaint = g_complaint;
+             dupd.cresponse  = g_response ;
+             if g_status = 'P';
+               dupd.cstatus    = 'Pending';
+             else;
+               dupd.cstatus    = 'Resolved';
+             endif;
+            DOW *IN03 = *OFF              ;
+             if error = 0;
+              *in = *off;
+              *in92 = *on;
+              exsr clrmsgsfl;
+             endif;
+             exsr dsphdrftr;
+             write GRIEVERRC;
+             exfmt UPDCOMPR dupd;
+             if *in04 = *on               ;
+              Action2 = prompt;
+              CallingMod2 = CallingMod;
+              callp controlrp('GRIEVE' : 'STATUS': pstatus :
+                              Action2: CallingMod2: pusrId);
+              if pstatus = 'P';
+               dupd.cstatus = 'Pending';
+              elseif pstatus = 'R';
+               dupd.cstatus = 'Resolved';
+              endif;
+             endif;
+             if *in03 = *on or *in12 = *on;
+               leave;
+             endif;
+             error = 0;
+             exsr clrmsgsfl;
+             if dupd.cresponse = *blanks;
+               error = 1;
+               *in41 = *On;
+               MSGID = 'UAR0022';
+               exsr showmsg;
+             else;
+               *in41 = *Off;
+             endif;
+             pvalue = *blanks;
+             if dupd.cstatus = 'Pending';
+               pvalue = 'P'         ;
+             elseif dupd.cstatus = 'Resolved';
+               pvalue = 'R'         ;
+             endif;
+            exec sql
+            CALL CHKCST(:pValue, 'GRIEVE', 'STATUS', :validstatus);
+            if validstatus = 0;
+               error = 1;
+               *in42 = *On;
+               MSGID = 'UAR0023';
+               exsr showmsg;
+             else;
+               *in42 = *Off;
+            endif;
+            if *in06 = *on and error = 0 ;
+              g_response = dupd.cresponse;
+              if dupd.cstatus = 'Pending';
+               g_status = 'P'         ;
+              else;
+               g_status = 'R'         ;
+              endif;
+              UPDATE GRIEVR;
+              leave;
+           endif;
+         ENDDO;
+        endif;
+        endsr;
+        begsr dspfun;
+          exsr rfrshDsp;
+          chain dlist.DGRVID GRIEVR;
+          If %found;
+            ddsp.dGRVID = g_grvid;
+            chain g_usrid usrmastr;
+            if %found;
+              ddsp.dusrname = u_usrname;
+            endif;
+            ddsp.dfltID = g_fltid;
+            chain g_fltid flightr   ;
+            if %found;
+              chain f_airid airmastr  ;
+              if %found;
+                 ddsp.dairname = a_airname;
+              endif;
+             endif;
+               //dupd.dbkid = g_bkid;
+             ddsp.dfltdepd = f_fltdepd;
+             ddsp.dfltorigin = f_fltorigin;
+             ddsp.dfltdest   = f_fltdest  ;
+             ddsp.ccomplaint = g_complaint;
+             ddsp.cresponse  = g_response ;
+             if g_status = 'P';
+               ddsp.cstatus    = 'Pending';
+             else;
+               ddsp.cstatus    = 'Resolved';
+             endif;
+            DOW *IN03 = *OFF              ;
+             exsr dsphdrftr;
+             write GRIEVERRC;
+             exfmt dspCOMPR ddsp;
+             if *in03 = *on or *in12 = *on;
+               leave;
+             endif;
+         ENDDO;
+        endif;
+        endsr;
+        begsr addfun;
+           exsr rfrshadd;
+           chain(N) pbkId BOOKINGr ;
+           if %found;
+            chain(N) b_fltId FLIGHTr ;
+            if %found;
+              dAddds.dbkid = pbkid;
+              dAddds.dfltorigin = f_fltorigin;
+              dAddds.dfltdest = f_fltdest;
+              dAddds.dbkdate = b_bkdate;
+              chain(N) f_airId airmastr ;
+              if %found;
+                daddds.dairname = a_airname;
+              endif    ;
+            endif;
+           endif;
+           dow *in03 = *off;
+             *in91 = *on;
+             *in92 = *off;
+             *in93 = *off;
+             *in94 = *off;
+             exsr dsphdrftr;
+             WRITE GRIEVERRC;
+             exfmt REGCOMPR daddds;
+             if *in03 = *on or *in12 = *on;
+               leave;
+             endif;
+             if *in05 = *on;
+              exsr rfrshadd;
+              iter;
+             endif;
+             error = 0;
+             exsr clrmsgsfl;
+             if daddDs.CCOMPLAINT = *BLANKS;
+               *in21 = *on;
+               error = 1;
+               MSGID = 'UAR0021';
+               exsr showmsg;
+             else;
+               *in21 = *off;
+             endif;
+             if *in06 = *on and error = 0;
+                chain  (pusrId : b_fltId :'P') GRIEV1  ;
+                if %found;
+                  G1_COMPLAINT = dAddds.CCOMPLAINT;
+                  G1_RESPONSE  = *BLANKS   ;
+                  G1_STATUS    = 'P'       ;
+                  UPDATE  GRIEV1;
+                else;
+                  exsr genId;
+                  G1_GRVID = tempId4;
+                  G1_USRID = pusrId;
+                  G1_FLTID = b_FLTID;
+                  G1_COMPLAINT = dAddds.CCOMPLAINT;
+                  G1_RESPONSE  = *BLANKS   ;
+                  G1_STATUS    = 'P'       ;
+                  WRITE   GRIEV1;
+                endif;
+              leave;
+             endif;
+           enddo;
+        endsr;
+       begsr genId  ;
+        tempid1 = 0;
+        tempid2 = 0;
+        setgt *HIVAL   GRIEV1;
+        readp(N) GRIEV1;
+        if not %EOF;
+          tempId = %subst(G1_GRVID : 2 : 4);
+          pos = %check('1234567890': %trim(tempId));
+          if pos = 0;
+           tempid1 = %dec(%trim(tempid) : 4 : 0)  ;
+           tempid2 = tempid1 + 1;
+          endif;
+        endif;
+        tempId3 = %editc(tempId2 :'X');
+        tempId4 = 'G' + tempId3;
+       endsr;
+
+       begsr showmsg;
+
+               callp msgsflcl(MSGID:'AIRERRMSGF':'I':PGMQ);
+        endsr;
+       /end-free
+       begsr clrmsgsfl;
+
+               callp msgsflcl(MSGID:'AIRERRMSGF':'C':PGMQ);
+       endsr;
+      /end-free

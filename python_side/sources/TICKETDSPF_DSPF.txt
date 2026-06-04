@@ -1,0 +1,407 @@
+     A*%%TS  SD  20250716  133237  VAVAN       REL-V7R5M0  5770-WDS
+     A*%%EC
+     A                                      DSPSIZ(24 80 *DS3)
+     A                                      REF(*LIBL/TICKETJLF)
+     A                                      INDARA
+     A                                      PRINT
+     A                                      CF03(03 'Exit')
+     A                                      CF04(04 'Previous Passenger')
+     A                                      CF05(05 'Refresh')
+     A                                      CF06(06 'Book Ticket')
+     A                                      CF08(08 'Cancel booking')
+     A                                      CF07(07 'Feedback'      )
+     A                                      CF12(12 'Cancel')
+      ******************************************************************
+      * HEADER FORMAT
+      ******************************************************************
+     A          R TKTHDR
+     A                                       OVERLAY
+     A                                  1  2'User:'
+     A            DUSER          5A  O  1  8
+     A                                  1 24'Domestic Flight Booking System'
+     A                                  2 24'ARIANO'
+     A                                  1 65'Date:'
+     A            SYSDATE         L  O  1 71
+     A                                       DATFMT(*YMD)
+     A                                       DATSEP('/')
+     A                                  2 65'Time:'
+     A            SYSTIME         T  O  2 71TIMFMT(*HMS)
+     A                                      TIMSEP(':')
+     A  91                              3 10'--------------- Book Ticket +
+     A                                      Screen --------------------'
+     A  92                              3 10'--------------- View Tickets+
+     A                                      ---------------------------'
+     A  93                              3 10'--------------- View Tickets+
+     A                                      ---------------------------'
+     A  94                              3 10'--------------- View Tickets+
+     A                                      ---------------------------'
+     A  95                              3 10'--------------- Update Ticke+
+     A                                      t Details------------------'
+     A  96                              3 10'--------------- Cancel Booki+
+     A                                      ng-------------------------'
+
+      ******************************************************************
+      * FOOTER FORMAT
+      ******************************************************************
+     A          R TKTFOOTR
+     A                                      OVERLAY
+     A  91                             23  2'F3=Exit  F4=Previous Passenger +
+     A                                       F6=Book Ticket  F12=Cancel'
+     A  92                             23  2'F3=Exit  F4=Completed/Upcoming+
+     A                                       /Cancelled +
+     A                                       F5=Refresh  F12=Cancel'
+     A  93                             22  2'F3=Exit  F4=Completed/Upcoming+
+     A                                       /Cancelled F5=Refresh +
+     A                                       F6=Register Complaint '
+     A  93                             23  2 'F7=Feedback F8=Cancel Booking'
+     A  94                             23  2'F3=Exit F12=Cancel'
+     A  95                             23  2'F3=Exit F4=Prompt F5=Refresh +
+     A                                       F6=Request Update +
+     A                                       F12 = Cancel'
+     A  96                             23  2'F3=Exit F8=Request Cancellati+
+     A                                       on +
+     A                                       F12=Cancel'
+     A******************************************************************
+     A* BOOK TICKET FORMAT
+     A******************************************************************
+     A          R BOOKTCKR
+     A*%%TS  SD  20250716  090810  VAVAN       REL-V7R5M0  5770-WDS
+     A                                      OVERLAY
+     A*                                      KEEP
+     A                                       RTNCSRLOC(&RCD &FLD &POS)
+     A                                       ERASE(PSGSFLR PSGCTLW +
+     A                                       ADDPSGWNDR TICKETSFL +
+     A                                       BOOKCNCLR +
+     A                                       TICKETSFLC TICKETDSP +
+     A                                       TICKETUPD NORCDR)
+     A            RCD           10A  H
+     A            FLD           10A  H
+     A            POS            4S 0H
+     A                                  5  2'Flight ID. . . :'
+     A            DFLTID    R        O  5 19REFFLD(FLTID)
+     A                                  5 42'Airline. . . . :'
+     A            DAIRLINE  R        O  5 59REFFLD(AIRNAME)
+     A                                  6  2'Booking ID. . .:'
+     A            DBKID     R        O  6 19REFFLD(BKID)
+     A                                  6 42'Ticket ID. . ..:'
+     A            DTKTID    R        O  6 59REFFLD(TKTID)
+     A                                  8  2'Origin. . . . .:'
+     A            DFLTORIGINR        O  8 19REFFLD(FLTORIGIN)
+     A                                  8 42'Destination. ..:'
+     A            DFLTDEST  R        O  8 59REFFLD(FLTDEST)
+     A                                 10  2'Departure Date.:'
+     A            DFLTDEPD  R        O 10 19REFFLD(FLTDEPD)
+     A                                 10 42'Departure Time.:'
+     A            DFLTDEPT  R        O 10 59REFFLD(FLTDEPT)
+     A                                 13  2'Passenger Name.:'
+     A            DPSGNAME  R        B 13 19REFFLD(PSGNAME)
+     A                                 13 42'Gender. . . . .:'
+     A            DPSGGENDERR        B 13 59REFFLD(PSGGENDER)
+     A  41                                  DSPATR(RI)
+     A                                 15  2'Age. . . . . ..:'
+     A            DPSGAGE   R        B 15 19REFFLD(PSGAGE)
+     A                                 15 42'Relation. . . .:'
+     A            DPSGRLTN  R        B 15 59REFFLD(PSGRLTN)
+
+      ************************************************************
+      * Choose Passenger - Subfile in Window
+      ************************************************************
+     A          R PSGSFLR                   SFL
+     A            POPT           1A  B  7  2
+     A  80                                   DSPATR(RI)
+     A            PPSGID    R           7  7 REFFLD(PSGID)
+     A            PPSGNAME  R           7 17 REFFLD(PSGNAME)
+     A            PPSGGENDERR           7 38 REFFLD(PSGGENDER)
+     A            PPSGAGE   R           7 45 REFFLD(PSGAGE)
+     A            PPSGRLTN  R           7 49 REFFLD(PSGRLTN)
+
+     A          R PSGCTLW                    SFLCTL(PSGSFLR)
+     A                                       ERASE(BOOKTCKR        +
+     A                                       ADDPSGWNDR TICKETSFL +
+     A                                       TICKETSFLC TICKETDSP +
+     A                                       BOOKCNCLR +
+     A                                       TICKETUPD NORCDR )
+     A*                                      WINDOW(6 10 12 65)
+     A                                       WINDOW(WINDOW)
+     A                                       OVERLAY
+     A*                                      KEEP
+     A                                       SFLSIZ(10)
+     A                                       SFLPAG(4)
+     A  71                                   SFLDSP
+     A  72                                   SFLDSPCTL
+     A  70                                   SFLCLR
+     A  99                                   SFLEND
+     A                                  1 25'Choose Passenger'
+     A                                  2  2'Type 1, Press Enter'
+     A                                  3  2'Press F12 to cancel'
+     A*                                 5  2'Opt Passenger ID  Name           Ge
+     A                                  5  2 'Opt'
+     A                                  5  7 'Passenger'
+     A                                  5 17 'Name'
+     A                                  5 38 'Gender'
+     A                                  5 45 'Age'
+     A                                  5 49 'Relation'
+     A                                  6  2 '---'
+     A                                  6  7 '---------'
+     A                                  6 17 '--------------------'
+     A                                  6 38 '------'
+     A                                  6 45 '---'
+     A                                  6 49 '--------'
+      ******************************************************************
+      * ADD MORE PASSENGER - POP-UP WINDOW
+      ******************************************************************
+     A          R ADDPSGWNDR                 WINDOW(6 10 8 60)
+     A                                       RTNCSRLOC(&RCD &FLD &POS)
+     A                                      OVERLAY
+     A                                       ERASE(PSGSFLR PSGCTLW +
+     A                                       BOOKTCKR   TICKETSFL +
+     A                                       BOOKCNCLR +
+     A                                       TICKETSFLC TICKETDSP +
+     A                                       TICKETUPD NORCDR)
+     A*                                     KEEP
+     A                                      PUTOVR
+     A            RCD           10A  H
+     A            FLD           10A  H
+     A            POS            4S 0H
+     A                                  2 23'Want To Add More Passenger'
+     A                                  2  2'Click on Yes to add more passenger'
+     A                                  3  2'Click No to book the ticket'
+     A                                  4  2'Cancel to cancel booking.'
+
+     A            YESBTN         5A  B  6 10
+     A* 60                                  DSPATR(RI)
+     A                                      DSPATR(RI)
+     A                                      DSPATR(PC)
+     A                                      OVRDTA
+     A                                      DFT(' Yes ')
+     A                                      COLOR(YLW)
+     A            NOBTN          4A  B  6 30
+     A* 61                                  DSPATR(RI)
+     A                                      DSPATR(RI)
+     A                                      DSPATR(PC)
+     A                                      OVRDTA
+     A                                      DFT(' No ')
+     A                                      COLOR(YLW)
+     A            CNCLBTN        8A  B  6 50
+     A* 62                                  DSPATR(RI)
+     A                                      DSPATR(RI)
+     A                                      DSPATR(PC)
+     A                                      DFT(' Cancel ')
+     A                                      COLOR(YLW)
+     A                                      OVRDTA
+      ******************************************************************
+      * LIST TICKET SCREEN
+      ******************************************************************
+     A          R TICKETSFL
+     A                                       SFL
+     A            DOPT           1A  B 17  2
+     A  32                                   DSPATR(RI)
+     A            DTKID     R        O 17  7 REFFLD(TKTID)
+     A            DPSGID    R        O 17 17 REFFLD(PSGID)
+     A            DPSGNAME  R        O 17 30 REFFLD(PSGNAME)
+     A*           DTKTSTATUSR        O 17 52 REFFLD(TKTSTATUS)
+     A            CTKTSTATUS    10A  O 17 52
+
+     A          R TICKETSFLC                 SFLCTL(TICKETSFL)
+     A                                       ERASE(PSGSFLR PSGCTLW +
+     A                                       BOOKTCKR   ADDPSGWNDR +
+     A                                                  TICKETDSP +
+     A                                       BOOKCNCLR +
+     A                                       TICKETUPD)
+     A                                       SFLSIZ(0050)
+     A                                       SFLPAG(0005)
+     A  89                                   SFLEND
+     A  80                                   SFLCLR
+     A  81                                   SFLDSP
+     A  82                                   SFLDSPCTL
+     A                                       OVERLAY
+     A*                                      SFLCSRRRN(&CSRNUM)
+
+     A*           CSRNUM         5S 0H
+     A*           CSRPAG         4S 0H       SFLRCDNBR(CURSOR )
+
+     A  20                              6  2'2=Update    5=Display'
+     A  21                              6  2'5=Display'
+     A                                  8  2'Booking ID. . .:'
+     A            DBKID     R        O  8 20REFFLD(BKID)
+     A                                  8 45'Origin. . .:'
+     A            DFLTORIGINR        O  8 58REFFLD(FLTORIGIN)
+     A                                 10  2'Passenger Name.:'
+     A            DPSGNAME  R        O 10 20REFFLD(PSGNAME)
+     A                                 10 45'Destination:'
+     A            DFLTDEST  R        O 10 58REFFLD(FLTDEST)
+     A                                 12  2'Travel Date. . :'
+     A            DFLTDEPD  R        O 12 20REFFLD(FLTDEPD )
+     A*                           15  2'Opt  Ticket Id  Passenger Id  Passenger
+     A*                           16  2'---  _________  ____________  __________
+     A                                  5 54'Position To:'
+     A            POSTOID   R        B  5 69REFFLD(AIRID)
+     A                                 15  2'Opt'
+     A                                 15  7'Ticket Id'
+     A                                 15 17'Passenger Id'
+     A                                 15 30'Passenger Name'
+     A                                 15 52'Status'
+
+     A                                 16  2'---'
+     A                                 16  7'---------'
+     A                                 16 17'------------'
+     A                                 16 30'--------------'
+     A                                 16 52'------'
+     A******************************************************************
+     A* DISPLAY TICKET SCREEN
+     A******************************************************************
+     A          R TICKETDSP
+     A*%%TS  SD  20250716  133237  VAVAN       REL-V7R5M0  5770-WDS
+     A                                      OVERLAY
+     A                                       ERASE(PSGSFLR PSGCTLW +
+     A                                       BOOKTCKR   TICKETSFL  +
+     A                                       BOOKCNCLR +
+     A                                       NORCDR    TICKETSFLC +
+     A                                       TICKETUPD)
+     A                                  5  2'Booking Id:'
+     A            DBKID     R        O  5 14REFFLD(BKID)
+     A                                  5 35'Passenger Id:'
+     A            DPSGID    R        O  5 49REFFLD(PSGID)
+     A                                  5 64'Flight Id:'
+     A            DFLTID    R        O  5 75REFFLD(FLTID)
+     A                                  7  2'Ticket ID. . .:'
+     A            DTKTID    R        O  7 18REFFLD(TKTID)
+     A                                  9  2'Passenger Name:'
+     A            DPSGNAME  R        O  9 18REFFLD(PSGNAME)
+     A                                  9 40'Airline Name..:'
+     A            DAIRNAME  R        O  9 56REFFLD(AIRNAME)
+     A                                 11  2'Origin. . . . :'
+     A            DFLTORIGINR        O 11 18REFFLD(FLTORIGIN)
+     A                                 11 40'Destination. .:'
+     A            DFLTDEST  R        O 11 56REFFLD(FLTDEST)
+     A                                 13  2'Booking Date.:'
+     A            DBKDATE   R        O 13 18REFFLD(BKDATE)
+     A                                 13 40'Departure Date:'
+     A            DFLTDEPD  R        O 13 56REFFLD(FLTDEPD)
+     A                                 15  2'Departure Time:'
+     A            DFLTDEPT  R        O 15 18REFFLD(FLTDEPT)
+     A                                 15 40'Seat Number. .:'
+     A            TKTSEATNUMR        O 15 56REFFLD(TKTSEATNUM)
+     A                                 17  2'Ticket Price..:'
+     A            DFLTTKPRC R        O 17 18REFFLD(FLTTKPRC)
+     A                                 17 40'Status. . . . :'
+     A            CTKTSTATUS    10A  O 17 56
+     A******************************************************************
+     A* UPDATE  TICKET SCREEN
+     A******************************************************************
+     A          R TICKETUPD
+     A*%%TS  SD  20250716  133237  VAVAN       REL-V7R5M0  5770-WDS
+     A                                       RTNCSRLOC(&RCD &FLD &POS )
+     A                                      OVERLAY
+     A                                       ERASE(PSGSFLR PSGCTLW +
+     A                                       BOOKTCKR   TICKETSFL  +
+     A                                       BOOKCNCLR +
+     A                                       NORCDR    TICKETSFLC +
+     A                                       TICKETDSP)
+     A            RCD           10A  H
+     A            FLD           10A  H
+     A            POS            4S 0H
+     A                                  5  2'Booking Id:'
+     A            DBKID     R        O  5 14REFFLD(BKID)
+     A                                  5 35'Passenger Id:'
+     A            DPSGID    R        O  5 49REFFLD(PSGID)
+     A                                  5 64'Flight Id:'
+     A            DFLTID    R        O  5 75REFFLD(FLTID)
+     A                                  7  2'Ticket ID. . .:'
+     A            DTKTID    R        O  7 18REFFLD(TKTID)
+     A                                  9  2'Passenger Name:'
+     A            DPSGNAME  R        B  9 18REFFLD(PSGNAME)
+     A  30                                  DSPATR(PR)
+     A  35                                  DSPATR(RI)
+     A                                  9 40'Airline Name..:'
+     A            DAIRNAME  R        O  9 56REFFLD(AIRNAME)
+     A                                 11  2'Origin. . . . :'
+     A            DFLTORIGINR        B 11 18REFFLD(FLTORIGIN)
+     A  33                                  DSPATR(RI)
+     A                                 11 40'Destination. .:'
+     A            DFLTDEST  R        B 11 56REFFLD(FLTDEST)
+     A  34                                  DSPATR(RI)
+     A                                 13  2'Booking Date.:'
+     A            DBKDATE   R        O 13 18REFFLD(BKDATE)
+     A                                 13 40'Departure Date:'
+     A            DFLTDEPD  R        B 13 56REFFLD(FLTDEPD)
+     A  30                                  DSPATR(PR)
+     A                                 15  2'Departure Time:'
+     A            DFLTDEPT  R        B 15 18REFFLD(FLTDEPT)
+     A                                 15 40'Seat Number. .:'
+     A            TKTSEATNUMR        B 15 56REFFLD(TKTSEATNUM)
+     A                                 17  2'Ticket Price..:'
+     A            DFLTTKPRC R        O 17 18REFFLD(FLTTKPRC)
+     A                                 17 40'Status. . . . :'
+     A            CTKTSTATUS    10A  B 17 56
+     A          R TKERRSFL
+     A                                        SFL
+     A                                        SFLMSGRCD(24)
+     A            MSGKEY                      SFLMSGKEY
+     A            PGMQ                        SFLPGMQ
+     A          R TKERRCTL
+     A                                        OVERLAY
+     A*                                       KEEP
+     A                                        SFLCTL(TKERRSFL)
+     A  99                                    SFLEND
+     A                                        SFLDSP
+     A                                        SFLDSPCTL
+     A                                        SFLSIZ(1)
+     A                                        SFLPAG(1)
+     A                                        SFLINZ
+     A            PGMQ                        SFLPGMQ
+
+     A******************************************************************
+     A* NO RECORDS
+     A******************************************************************
+     A          R NORCDR
+     A*                                      KEEP
+     A                                       OVERLAY
+     A*                                      ERASE(PSGSFLR PSGCTLW +
+     A*                                      BOOKTCKR              +
+     A*                                      TICKETUPD            +
+     A*                                      TICKETDSP)
+     A                                 18 12'No records'
+     A******************************************************************
+     A* NO RECORDS
+     A******************************************************************
+     A          R NORCDRW
+     A*                                      KEEP
+     A                                       OVERLAY
+     A                                       WINDOW(WINDOW)
+     A                                  8 17'No records'
+     A          R WINDOW
+     A                                       OVERLAY
+     A                                       WINDOW(6 10 12 65)
+     A*                                      WDWTITLE( (*TEXT &TITLE) +
+     A*                                                (*COLOR PNK))
+     A*                                      WDWBORDER( (*COLOR GRN) +
+     A*                                      (*DSPATR RI) +
+     A*                                      (*CHAR '++++++++'))
+     A*                                13  4'F12=CANCEL'
+     A******************************************************************
+     A* Request Cancellation
+     A******************************************************************
+     A          R BOOKCNCLR
+     A*%%TS  SD  20250716  090810  VAVAN       REL-V7R5M0  5770-WDS
+     A                                       OVERLAY
+     A*                                      KEEP
+     A                                       ERASE(PSGSFLR PSGCTLW +
+     A                                       ADDPSGWNDR TICKETSFL +
+     A                                       TICKETSFLC TICKETDSP +
+     A                                       BOOKTCKR +
+     A                                       TICKETUPD NORCDR)
+     A                                  5  2'Booking ID . . :'
+     A            DBKID     R        O  5 19REFFLD(BKID)
+     A                                  5 42'Origin.. . . . :'
+     A            DFLTORIGINR        O  5 59REFFLD(FLTORIGIN)
+     A                                  6  2'Booking Date. .:'
+     A            DBKDATE   R        O  6 19REFFLD(BKDATE)
+     A                                  6 42'Destination. ..:'
+     A            DFLTDEST  R        O  6 59REFFLD(FLTDEST)
+     A                                  9  2'Airline........:'
+     A            DAIRNAME  R        O  9 19REFFLD(AIRNAME)
+     A                                 10  2'Reason.........:'
+     A            DREMARK       15A  B 10 19
+     A*                                     CNTFLD(10)
+

@@ -1,0 +1,52 @@
+PGM
+             DCL        VAR(&CALLINGMOD) TYPE(*CHAR) LEN(10)
+
+             DCL        VAR(&ACTION) TYPE(*CHAR) LEN(10)
+             DCL        VAR(&PUSERID) TYPE(*CHAR) LEN(5)
+             DCL        VAR(&PAIRID) TYPE(*CHAR) LEN(5)
+             DCL        VAR(&PROLE) TYPE(*CHAR) LEN(10)
+             DCL        VAR(&LOGINPRESS) TYPE(*DEC) LEN(1) VALUE(0)
+             DCL        VAR(&F3PRESS) TYPE(*DEC) LEN(1) VALUE(0)
+             DCL        VAR(&PROLE) TYPE(*CHAR) LEN(10)
+             DCL        VAR(&SIGNOUT) TYPE(*DEC) LEN(1 0)
+
+             MONMSG     MSGID(CPF0000) EXEC(GOTO CMDLBL(ERROR))
+
+  LOGIN:
+
+             CHGVAR     VAR(&CALLINGMOD) VALUE(MAINSYSCL)
+             CHGVAR     VAR(&ACTION) VALUE('LOGIN')
+             CHGVAR     VAR(&PUSERID) VALUE('     ')
+             CHGVAR     VAR(&PAIRID)  VALUE('     ')
+             CHGVAR     VAR(&PROLE) VALUE('          ')
+             CHGVAR     VAR(&SIGNOUT) VALUE(00)
+/* CALL program to show latest statuses of flights */
+             CALL       PGM(LateSRP) PARM((&LOGINPRESS)(&F3PRESS))
+/* CALL LOGINRP TO DO LOGIN AND RETURN ROLE */
+             IF        COND(&LOGINPRESS *EQ 1) THEN(DO)
+             CALL       PGM(LOGINRP) PARM((&CALLINGMOD) (&ACTION) +
+                          (&PUSERID) (&PROLE) (&SIGNOUT))
+             IF         COND(&SIGNOUT *EQ  01  ) THEN(DO)
+             GOTO       CMDLBL(END)
+             ENDDO
+/* ROUTE TO CORRECT MODULE BASED ON ROLE */
+             IF         COND(&PROLE *EQ ADMIN) THEN(DO)
+             CALL       PGM(ADMMNUCL) PARM((&CALLINGMOD) (&ACTION) +
+                          (&PAIRID) (&PUSERID) (&PROLE))
+             ENDDO
+             IF         COND(&PROLE *EQ 'AIRLINE') THEN(DO)
+             CALL       PGM(AIRMNUCL) PARM((&CALLINGMOD) (&ACTION) +
+                          (&PAIRID) (&PUSERID))
+             ENDDO
+             IF         COND(&PROLE *EQ 'USER') THEN(DO)
+             CALL       PGM(USRMNUCL) PARM((&CALLINGMOD) (&ACTION) +
+                          (&PAIRID) (&PUSERID))
+             ENDDO
+             GOTO       CMDLBL(LOGIN)
+             ENDDO  /*STATUS PROGRAM ENDDO*/
+             ELSE       DO
+             GOTO       CMDLBL(END)
+             ENDDO  /*STATUS PROGRAM ENDDO*/
+ ERROR:      SNDPGMMSG  MSGID(CPF9898) MSGF(QCPFMSG) MSGDTA('"An +
+                          unexpected error occured."')
+ END:        ENDPGM

@@ -1,0 +1,209 @@
+     HBNDDIR('MYBNDDIR')
+     HDftactgrp(*no) actgrp(*caller)
+     FUSERDSPF  CF   E             WORKSTN sfile(USERSFL:sflrrn)
+     D/COPY QRPGLESRC,SYSCOPYMBR
+     DMSGSFLCL         PR                  EXTPGM('MSGSFLCL')
+     DMSGID                           7A
+     DMSGF                           10A   const
+     DMSGOPT                          1A   const
+     DPGMQ                           10A   const
+     Dvactionrp        pr             1s 0
+     D Action                        10a
+     D CallingMod                    10a
+     Dvalid            s              1s 0
+     Ddlistds          ds                  LIKEREC(USERSFL:*ALL)
+     DdlistCds         ds                  LIKEREC(USERSFLC:*ALL)
+     Ddupdds           ds                  LIKEREC(USERUPDR:*ALL)
+     Dstm1             s            250a
+     dcusrgender       s              1a
+     dcusrstatus       s              1a
+     dcusrid           s              5a
+     dcusrDOB          s                   LIKE(dupdds.dusrDOB)
+     dcusrMobnum       s                   LIKE(dupdds.dusrmobnum)
+     dcusremail        s                   LIKE(dupdds.dusremail )
+     dcusrcity         s                   LIKE(dupdds.dusrcity  )
+     dcusrpincode      s                   LIKE(dupdds.dusrpincode)
+     dcusrstate        s                   LIKE(dupdds.dusrstate  )
+     dcusraddress      s                   LIKE(dupdds.dusraddress)
+     dcusraadhar       s                   LIKE(dupdds.dusraadhar )
+     dstatus           s              1a   INZ('A')
+     dcPostoId         s              5a
+     dsflrrn           s              4s 0
+     derror            s              1s 0 INZ(0)
+     dsfllastrrn       s              4s 0
+     D MSGID           S              7A
+     D PGMQ            S             10A
+
+     C     *ENTRY        PLIST
+     C                   parm                    CallingMod       10
+     c                   parm                    Action           10
+     c                   parm                    pairId            5
+     c                   parm                    pusrId            5
+      /free
+       valid = 0;
+       valid = vactionrp(Action : CallingMod );
+       if valid = 1;
+         if Action = list and callingMod = admin;
+            exsr listfun;
+         endif;
+       endif;
+       *inlr = *on;
+       return;
+       begsr rfrshlst;
+        sflrrn = 0;
+        *in = *off;
+        clear dlistds;
+        *in70 = *on;
+        write USERSFLC;
+        *in70 = *off;
+       endsr;
+       begsr dsphdrftr;
+        duser = pusrId;
+        sysdate = %date();
+        systime = %time();
+        write USERHDR;
+        write USERFOOTR;
+       endsr;
+       begsr loadUsers;
+        if dlistcds.postoid <> *blanks;
+         stm1 = 'select usrId, usrname, usrmobnum, usrgender, usrstatus ' +
+               'from usrmasl1   where usrId >= ? '                +
+                ' and usrstatus = ?      ' ;
+        else;
+         stm1 = 'select usrId, usrname, usrmobnum, usrgender, usrstatus ' +
+         ' from usrmasl1  where usrstatus = ? '      ;
+        endif;
+         exec sql
+         prepare s1 from :stm1                                  ;
+        exec sql
+        declare C1 SENSITIVE SCROLL CURSOR FOR  s1 ;
+
+        if dlistcds.postoid <> *blanks;
+        cpostoId = dlistcds.postoid;
+        exec sql
+         open    C1  using :cpostoid, :status;
+        else;
+        exec sql
+         open    C1  using                    :status;
+        endif;
+        exec sql
+         fetch next from C1 into :cusrId, :cusrname, :cusrmobnum ,
+          :cusrgender,:cusrstatus   ;
+         if sqlcod = 100 or sqlcod < 0;
+           *in71 = *off;
+           *in72 = *on;
+         endif;
+         dow sqlcod = 0  ;
+          sflrrn = sflrrn + 1;
+          dlistds.dopt = *blanks;
+          dlistds.dusrid = cusrid;
+          dlistds.dusrname = cusrname;
+          dlistds.dusrmobnum = cusrmobnum;
+          if cusrgender = 'M';
+           dlistds.dusrgender = 'Male';
+          else  ;
+           dlistds.dusrgender = 'Female';
+          endif;
+          if cusrstatus = 'I';
+           dlistds.dusrstatus = 'Inactive';
+          else  ;
+           dlistds.dusrstatus = 'Active';
+          endif;
+          write USERSFL;
+         exec sql
+         fetch next from C1 into :cusrId, :cusrname, :cusrmobnum ,
+          :cusrgender,:cusrstatus   ;
+         enddo;
+         if sflrrn > 0;
+          sfllastrrn = sflrrn;
+          *in99 = *on ;
+          *in72 = *on ;
+          *in71 = *on;
+         endif;
+       endsr;
+       begsr listfun;
+        dow *in03 = *off;
+         if error = 0;
+           exsr rfrshlst;
+           exsr loadUsers;
+         endif;
+         *in90 = *on;
+         exsr dsphdrftr;
+        // write USERERRC;
+         exfmt USERSFLC;
+         IF *in12 = *on;
+          leave;
+         endif;
+         if *in05 = *on;
+          dlistcds.postoid = *blanks;
+          iter;
+         endif;
+         if *in04 = *on;
+          if status = 'I'  ;
+           status = 'A';
+          else;
+           status = 'I';
+          endif;
+          iter;
+         endif;
+         error = 0;
+         readc USERSFL dlistds;
+         dow not %eof;
+         if dlistds.dopt <> *blanks;
+           if dlistds.dopt = '2';
+              exsr updfun;
+           else;
+           endif;
+         endif;
+         readc USERSFL dlistds;
+         enddo;
+
+        enddo;
+       endsr;
+       begsr updfun ;
+         stm1 = 'select usrId, usrname, usrdob, usergender,usrmobnum '    +
+               'usremail, usrcity, usrpincode, usrstate, usraddress ' +
+               'usraadhar, usrstatus ' +
+               'from usermaster where usrId >= ? ' +
+               'for update' ;
+         exec sql
+           Prepare s1 from :stm1;
+         exec sql
+           declare c2 cursor for s1            ;
+         cusrid = dlistds.dusrid;
+         exec sql
+           open c2 using cusrid                ;
+         exec sql
+           fetch from c2 into :cusrid, :cusrname, :cusrdob, :cusergender,
+            :cusrmobnum, :cusremail, :cusrcity, :cusrpincode, :cusrstate,
+            :cusraddress, :cusraadhar, :cusrstatus;
+          dupdds.dusrid = cusrid;
+          dupdds.dusrname = cusrname;
+          dupdds.dusrdob  = cusrdob ;
+          dupdds.dusrmobnum = cusrmobnum;
+          dupdds.dusremail  = cusremail ;
+          dupdds.dusrcity   = cusrcity  ;
+          dupdds.dusrpincode= cusrpincode;
+          dupdds.dusrstate  = cusrstate  ;
+          dupdds.dusraddress= cusraddress;
+          dupdds.dusraadhar = cusraadhar ;
+          if cusrgender = 'M';
+           dupdds.dusrgender = 'Male';
+          else  ;
+           dupdds.dusrgender = 'Female';
+          endif;
+          if cusrstatus = 'I';
+           dupdds.dusrstatus = 'Inactive';
+          else  ;
+           dupdds.dusrstatus = 'Active';
+          endif;
+       endsr;
+
+       begsr showmsg;
+
+               callp msgsflcl(MSGID:'AIRERRMSGF':'I':PGMQ);
+        endsr;
+       begsr clrmsgsfl;
+
+               callp msgsflcl(MSGID:'AIRERRMSGF':'C':PGMQ);
+       endsr;

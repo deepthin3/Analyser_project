@@ -1,0 +1,3 @@
+     A          R RATINGR                   PFILE(RATINGPF)
+     A          K FLTID
+     A          K RATING

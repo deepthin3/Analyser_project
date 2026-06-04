@@ -1,0 +1,138 @@
+A                                      DSPSIZE(24 80 *DS3)
+A                                      PRINT
+A                                      INDARA
+A                                      CF03(03 'Exit')
+A                                      CF04(04 'Prompt/Active-Inactive')
+A                                      CF05(05 'Refresh')
+A                                      CF06(06 'Add/Update')
+A                                      CF12(12 'Cancel')
+A                                      CF11(11 'Deactivate Profile')
+
+
+************************************************************************
+* HEADER FORMAT
+************************************************************************
+A          R USRHDR
+A                                  1  2'User:'
+A            dUser         10A  O  1  8
+A                                  1 40'Domestic Flight Booking System'
+A                                  1 70'Date:'
+A            sysdate        L   O  1 76 EDTCDE(Y)
+A                                  2 40'ARIANO'
+A                                  2 70'Time:'
+A            systime        T   O  2 76 EDTCDE(T)
+A90                                3  1 '---------------------- Manage Use'
+A90                                3 34 'rs-----------------------------'
+A92                                3  1 '-------------------- Update Custo'
+A92                                3 34 'mer------------------------------'
+A93                                3  1 '------------------- Display Custo'
+A93                                3 34 'mer Details ------------------------'
+A94                                3  1 '------------------- Display Profi'
+A94                                3 34 'le------ ------------------------'
+************************************************************************
+* FOOTER FORMAT
+************************************************************************
+A          R USRFOOTR
+
+A 92                               23  2'F3=Exit  F4=Prompt  F5=Refresh'
+A 92                               23 40'F6=Update  F12=Cancel'
+A 93                               23  2'F3=Exit  F12=Cancel'
+A 90                               23  2'F3=Exit  F4=Active/Inactive  F5=Refresh'
+A 90                               23 40' F12=Cancel'
+A 94                               23  2'F3=Exit F6=Update F12=Cancel'
+
+
+
+
+
+
+************************************************************************
+* MANAGE USERS - SUBFILE
+************************************************************************
+A          R USRLSR                     SFL
+A            dOpt          1A  B  10  2  CHECK(AB)
+A            dusrId        5A  O  10  6  REFFLD(USERMASTER/usrId)
+A            dusrName     20A  O  10 13  REFFLD(USERMASTER/usrName)
+A            dusrMobNum   10A  O  10 35  REFFLD(USERMASTER/usrMobNum)
+A            dusrGender    1A  O  10 47  REFFLD(USERMASTER/usrGender)
+A            dusrStatus    1A  O  10 56  REFFLD(USERMASTER/usrStatus)
+
+A          R USRCTL                      SFLCTL(USRLSR)
+A                                      SFLSIZ(1000)
+A                                      SFLPAG(10)
+A71                                    SFLDSP
+A72                                    SFLDSPCTL
+A70                                    SFLCLR
+A99                                   SFLEND
+A            sflrrn      H  4S 0
+A                                  6  2'Type Choice, Press Enter'
+A                                  7  2'2=Update  5=Display  6=View Bookings'
+A                                  8  2'Opt  User Id  Name                 Mobile     Gender  Status
+A                                  9 60'Position To:'
+A            posToUsr     5A  B  9 74  REFFLD(USERMASTER/usrId)
+A                                 23  2'F3=Exit   F4=Active/Inactive  F5=Refresh  F12=Cancel'
+************************************************************************
+* UPDATE CUSTOMER PROFILE
+************************************************************************
+A          R USRUPDR
+A                                      OVERLAY
+A                                  4  2'User Id:'
+A            dusrId        5A  O   4 12  REFFLD(USERMASTER/usrId)
+A                                  6  2'Name. .:'
+A            dusrName     20A  B   6 12  REFFLD(USERMASTER/usrName)
+A                                  6 45'DOB. . .:'
+A            dusrDOB       L   B   6 55  REFFLD(USERMASTER/usrDOB)
+A57                                     DSPATR(RI)
+
+A                                  8  2'Mobile. .:'
+A            dusrMobNum   10A  B   8 12  REFFLD(USERMASTER/usrMobNum)
+A56                                     DSPATR(RI)
+A                                  8 45'Aadhar.:'
+A            dusrAadhar   12S 0B   8 55  REFFLD(USERMASTER/usrAadhar)
+A                                 10  2'Email. . :'
+A            dusrEmail    50A  B  10 12  REFFLD(USERMASTER/usrEmail)
+A58                                     DSPATR(RI)
+A                                 10 45'Gender.:'
+A            dusrGender    1A  B  10 55  REFFLD(USERMASTER/usrGender)
+A                                 10 66 '(F4)'
+A60                                     DSPATR(RI)
+A                                 12  2'City. . :'
+A            dusrCity     20A  B  12 12  REFFLD(USERMASTER/usrCity)
+
+A                                 12 45'Pincode:'
+A            dusrPinCode   6S 0B 12 55  REFFLD(USERMASTER/usrPinCode)
+A                                 14  2'State. .:'
+A            dusrState    20A  B  14 12  REFFLD(USERMASTER/usrState)
+A                                 14 29 '(F4)'
+A59                                     DSPATR(RI)
+A                                 16  2'Address:'
+A            dusrAddress 100A  B  16 12  REFFLD(USERMASTER/usrAddress)
+A                                 23  2'F3=Exit  F4=Prompt  F5=Refresh  F6=Update  F12=Cancel'
+************************************************************************
+* DISPLAY CUSTOMER DETAILS
+************************************************************************
+A          R USRDSPR
+A                                      OVERLAY
+A                                  4  2'User Id:'
+A            dusrId        5A  O   4 12  REFFLD(USERMASTER/usrId)
+A                                  6  2'Name. .:'
+A            dusrName     20A  O   6 12  REFFLD(USERMASTER/usrName)
+A                                  6 45'DOB. . .:'
+A            dusrDOB       L   O   6 55  REFFLD(USERMASTER/usrDOB)
+A                                  8  2'Mobile. .:'
+A            dusrMobNum   10A  O   8 12  REFFLD(USERMASTER/usrMobNum)
+A                                  8 45'Aadhar.:'
+A            dusrAadhar   12S 0O   8 55  REFFLD(USERMASTER/usrAadhar)
+A                                 10  2'Email. . :'
+A            dusrEmail    50A  O  10 12  REFFLD(USERMASTER/usrEmail)
+A                                 12  2'City. . :'
+A            dusrCity     20A  O  12 12  REFFLD(USERMASTER/usrCity)
+A                                 12 45'Pincode:'
+A            dusrPinCode   6S 0O 12 55  REFFLD(USERMASTER/usrPinCode)
+A                                 14  2'State. .:'
+A            dusrState    20A  O  14 12  REFFLD(USERMASTER/usrState)
+A                                 14 45'Status.:'
+A            dusrStatus    1A  O  14 55  REFFLD(USERMASTER/usrStatus)
+A                                 16  2'Address:'
+A            dusrAddress 100A  O  16 12  REFFLD(USERMASTER/usrAddress)
+A                                 23  2'F3=Exit  F12=Cancel'

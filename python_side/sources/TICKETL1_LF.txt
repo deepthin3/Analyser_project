@@ -1,0 +1,3 @@
+     A          R TICKETR                   PFILE(TICKETPF)
+     A          K BKID
+     A          K TKTID

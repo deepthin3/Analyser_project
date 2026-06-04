@@ -1,0 +1,5 @@
+     A          R BOOKINGR                  PFILE(BOOKINGPF)
+
+     A          K BKSTATUS
+     A          K USRID
+     A          K BKID

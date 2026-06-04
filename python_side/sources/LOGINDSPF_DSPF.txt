@@ -1,0 +1,123 @@
+     A                                      DSPSIZ(24 80 *DS3)
+     A                                      INDARA
+     A                                      CF03(03 'EXIT')
+     A                                      CF05(05 'REFRESH' )
+     A                                      CF06(06 'NEW CUSTOMER REGISTRATION')
+     A                                      CF07(07 'FORGOT PASSWORD')
+     A                                      REF(VAVAN1/LOGINPF)
+     A          R LOGHDR
+     A                                      OVERLAY
+     A  90                              1  2'User: '
+     A  90        DUSERID   R        O  1  9REFFLD(LOGINR/USERID)
+     A                                  1 19'Domestic Flight Booking System'
+     A                                  1 65'DATE: '
+     A            SDATE           L  O  1 72
+     A                                      DATFMT(*YMD)
+     A                                      DATSEP('/')
+     A                                  2 32'ARIANO'
+     A                                  2 65'TIME: '
+     A            STIME           T  O  2 72
+     A                                      TIMFMT(*HMS)
+     A                                      TIMSEP(':')
+     A        91                        3  1'----------------------------- Sign'
+     A        91                        3 36'On ------------------------------+
+     A                                       --------'
+     A        90                        3  1'-----------------------Change Pass+
+     A                                       word-----------------------------+
+     A                                       -----------'
+     A        92                        3  1'-----------------------Forgot Pas+
+     A                                      sword-----------------------------+
+     A                                       -----------'
+     A          R FORGOTR
+     A                                      OVERLAY
+     A                                  7  7'Login Id. . . . . . . . .:'
+     A            DUSERID   R        B  7 44REFFLD(LOGINR/USERID)
+     A                                  9  7'Security Question. . . . :'
+     A            DUSERQSTN R        B  9 44REFFLD(LOGINR/USERQSTN)
+     A                                 11  7'Security Answer. . . . :'
+     A            DLOGANSWR R        B 11 44REFFLD(LOGINR/USERANSWR)
+     A  30                                  DSPATR(RI)
+     A                                 13  7'New Password. . . . . . .:'
+     A            DUSERPASS R        B 13 44REFFLD(LOGINR/USERPASS)
+     A  31                                  DSPATR(RI)
+     A                                      CHECK(LC)
+     A                                 15  7'Confirm Password. . . . .:'
+     A            DCONPASS  R        B 15 44REFFLD(LOGINR/USERPASS)
+     A  32                                  DSPATR(RI)
+     A                                      CHECK(LC)
+     A          R CHGPWDR
+     A                                      OVERLAY
+     A                                  9 10'Old Password. . . . :'
+     A            DUSERPASS R        B  9 32
+     A                                      REFFLD(LOGINR/USERPASS)
+     A  36                                  DSPATR(RI)
+     A                                      CHECK(LC)
+     A                                 11 10'New Password. . . . :'
+     A            DNEWPASS  R        B 11 32REFFLD(LOGINR/USERPASS)
+     A  37                                  DSPATR(RI)
+     A                                      CHECK(LC)
+     A                                 13 10'Confirm New Password:'
+     A            DCONPASS  R        B 13 32
+     A                                      REFFLD(LOGINR/USERPASS)
+     A  38                                  DSPATR(RI)
+     A                                      CHECK(LC)
+     A          R LOGFOOTR
+     A                                      OVERLAY
+     A  92                             22  1'F3=Exit  F5=Refresh'
+     A  92                             22 21' F6=Change password  F12=Cancel'
+     A  90                             22  1'F3=Exit  F5=Refresh'
+     A  90                             22 21' F6=Change password  F12=Cancel'
+     A  91                             22  1'F3=Exit F5=Refresh F6=New Customer'
+     A  91                             22 36'Registration F7=Forgot Password'
+     A          R LOGINDR
+     A                                      RTNCSRLOC(&RCD &FLD &POS)
+
+     A                                      OVERLAY
+     A            FLD           10A  H
+     A            RCD           10A  H
+     A            POS            4S 0H
+     A                                  7 13'User. . . . . . .:'
+     A            DUSERID   R        B  7 44REFFLD(LOGINR/USERID)
+     A  40                                  DSPATR(RI)
+     A                                      DSPATR(MDT)
+     A                                  8 13'Password. . . . .:'
+     A            DUSERPASS R        B  8 44REFFLD(LOGINR/USERPASS)
+     A  41                                  DSPATR(RI)
+     A*                                     DSPATR(MDT)
+     A                                      DSPATR(ND)
+     A                                      CHECK(LC)
+     A            DFORGOTBTN    15A  O 10 44DFTVAL('FORGOT PASSWORD')
+     A                                      DSPATR(RI)
+     A                                      COLOR(PNK)
+     A                                 14 18'**********'
+     A                                 15 19'IBM I 7.4'
+     A                                 16 18'**********'
+     A          R LOGERRSFL
+     A                                       SFL
+     A                                       SFLMSGRCD(23)
+     A            MSGKEY                     SFLMSGKEY
+     A
+     A            PGMQ                       SFLPGMQ
+     A          R LOGERRCTL
+     A                                       SFLCTL(LOGERRSFL)
+     A                                       OVERLAY
+     A                                       SFLDSP
+     A                                       SFLDSPCTL
+     A                                       SFLSIZ(3)
+     A                                       SFLINZ
+     A                                       SFLPAG(2)
+     A  99                                   SFLEND
+     A            PGMQ                       SFLPGMQ
+     A*         R MSGSFL                    SFL
+     A*                                     SFLMSGRCD(24)
+     A*           MSGKEY                    SFLMSGKEY
+     A*           PGMNAME                   SFLPGMQ
+     A*         R MSGCTL                    SFLCTL(MSGSFL)
+     A*                                     OVERLAY
+     A*                                     SFLDSP
+     A*                                     SFLDSPCTL
+     A*                                     SFLINZ
+     A*N99                                  SFLEND
+     A*                                     SFLSIZ(2)
+     A*                                     SFLPAG(1)
+     A*           PGMNAME                   SFLPGMQ

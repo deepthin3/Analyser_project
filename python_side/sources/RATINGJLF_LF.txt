@@ -1,0 +1,9 @@
+     A          R RATINGJ                   JFILE(RATINGPF  FLIGHTPF USERMASTER)
+     A          J                           JOIN(1 2)
+     A                                      JFLD(FLTID FLTID)
+     A          J                           JOIN(1 3)
+     A                                      JFLD(USRID USRID)
+     A            USRID                     JREF(RATINGPF  )
+     A            FLTID                     JREF(RATINGPF)
+     A          K USRID
+     A          K FLTID

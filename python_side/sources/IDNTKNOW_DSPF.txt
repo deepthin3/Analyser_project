@@ -1,0 +1,29 @@
+     A                                      CF03(03 'EXIT')
+     A                                      CF12(12 'CANCEL')
+     A                                      CF05(05 'REFRESH')
+     A          R ADMNDASHR
+     A                                  1  2  'User:'
+     A            DUSER         10A  O  1  8TEXT('Logged in user')
+     A                                  1 40  'Domestic Flight Booking System'
+     A                                  2 40  'ARIANO'
+     A                                  1 70  'Date:'
+     A            SYSDATE         L  O  1 76
+     A                                      DATFMT(*YMD)
+     A                                      DATSEP('/')
+     A                                  2 70  'Time:'
+     A            SYSTIME         T  O  2 76
+     A                                      TIMFMT(*HMS)
+     A                                      TIMSEP(':')
+     A                                  3  2'--------------------- Admin Dash'
+     A                                  3 32'board---------------------------'
+     A                                  8  6  'Type Choice, Press Enter'
+     A                                 10 10  '1. Manage Airlines'
+     A                                 11 10  '2. Manage Customers'
+     A                                 12 10  '3. View Bookings'
+     A                                 13 10  '4. View Flights'
+     A                                 14 10  '5. Manage Complaints'
+     A                                 15 10  '6. Control File Setup'
+     A                                 16 10  '7. Change Password'
+     A                                 19 10  'Enter Choice:'
+     A            DCHOICE        2A  B 19 25RANGE('1' '7')
+     A                                 23  2'F3=Exit   F5=Refresh   F12=Logout'

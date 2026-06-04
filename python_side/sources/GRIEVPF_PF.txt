@@ -1,0 +1,8 @@
+     A          R GRIEVR
+     A            GRVID          5A         TEXT('Grievance Id')
+     A            USRID          5A         TEXT('User ID')
+     A            FLTID          5A         TEXT('Flight ID')
+     A            COMPLAINT    100A         TEXT('Complaint')
+     A            RESPONSE     100A         TEXT('Response')
+     A            STATUS         1A         TEXT('Status')
+     A          K GRVID

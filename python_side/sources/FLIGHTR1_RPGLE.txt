@@ -1,0 +1,215 @@
+      *ListFltFun - Called from Admin menu -> 4. View Flights
+      *(all airline's flight)
+      * ListFltAir - Called from Airline menu -> 3. Manage flights
+      *DspFltFun  - Called from Admin menu -> 4. View Flights(ALL Airlines)
+      *Display, Called from Airline menu-> 3. Manage flights -> Display
+      *AddFltFun  - Called from Airline menu-> Schedule
+      *UpdFltFun  - Called from Admin menu -> 4. View Flights(all)-> Update
+      *Called from Airline menu -> 3. Manage flights -> Update
+      *SrchFltFun
+      *User Menu - Search flight (SrcFltMain)
+      *5b.             List search results (SrcFltLst)
+      *5c.             Display searched flight details (SrcFltDsp)
+     Hdftactgrp(*no) actgrp(*caller)
+     HBNDDIR('VAVAN1/MYBNDDIR')
+     FAIRMASTER UF A E           K DISK
+     FFLIGHTPF  UF A E           K DISK
+     FFLIGHTL1  UF A E           K DISK    RENAME(FLIGHTR:FLIG1)
+     FFLIGHTL2  UF A E           K DISK    RENAME(FLIGHTR:FLIG2)
+     FFLIGHTL3  IF A E           K DISK    RENAME(FLIGHTR:FLIG3)
+     FFLIGHTDSPFCF   E             WORKSTN SFILE(FLTLISTR:sflrrn)
+     DAirDs            Ds                  likerec(AIRMASTR:*all)
+     DfliDs            Ds                  likerec(FLIGHTR:*all)
+     DfliDs1           Ds                  likerec(FLIG1:*all)
+     DfliDs2           Ds                  likerec(FLIG2:*all)
+     DfliDs3           Ds                  likerec(FLIG3:*all)
+     DDdspDs           Ds                  likerec(DSPFLTR:*all)
+     DdUpdDs           Ds                  likerec(UPDFLTR:*all)
+     DdAddDs           Ds                  likerec(NEWFLTR:*all)
+     DdListDs          Ds                  likerec(FLTLISTR:*all)
+     DdLst1tDs         Ds                  likerec(FLTLISAR:*all)
+     DdSrcDs           Ds                  likerec(SRCHFLTR:*all)
+     DdSrcLDs          Ds                  likerec(SRCHLSTR:*all)
+     DdSrcDDs          Ds                  likerec(SRCFLTDR:*all)
+     D*
+     DvalidFlt         S              1S 0
+     Dvalid            S              1S 0
+     Dsflrrn           S              4S 0
+     Dsfllastrrn       S              4S 0
+     Derror            S              1S 0
+     Devalid           S              1S 0
+     Dcountry          S             20A
+     Dstate            S             20A
+     Dstatus           S              1A
+     DCallingMod2      S             10A
+     DAction2          S             10A
+     DpairId2          S              5A
+     DpuserId2         S              5A
+     DpbkId            S              5A
+     Dtempid1          S              5A
+     Dtempid2          S              5A
+     Dtempid3          S              4S 0
+     Dtempid4          S              5A
+     DfirstCEmail      S             50A
+     DatError          S              1S 0
+     DcomError         S              1S 0
+     DatPos            S              2S 0
+     DsecondAt         S              2S 0
+     DdotSecondAt      S              2S 0
+     DdotAfterAt       S              2S 0
+     DSfltDepD         S               D   Datfmt(*Iso)
+     Di                S              2S 0
+     D vactionrp       pr             1s 0
+     D Action                        10A
+     D CallingMod                    10A
+     D/COPY QRPGLESRC,SYSCOPYMBR
+     C     kairId        KLIST
+     C                   KFLD                    airID
+     C     kfltd         KLIST
+     C                   KFLD                    fltID
+     C     kfltd1        KLIST
+     C                   KFLD                    fltstatus
+     C                   KFLD                    airId
+     C                   KFLD                    fltId
+     C     kfltd2        KLIST
+     C                   KFLD                    fltorigin
+     C                   KFLD                    fltdest
+     C                   KFLD                    fltdepd
+     C                   KFLD                    fltstatus
+     C                   KFLD                    fltId
+     C     kfltd3        KLIST
+     C                   KFLD                    fltstatus
+     C                   KFLD                    FltId
+     C     kAirflt       KLIST
+     C                   KFLD                    Sfltstatus        1
+     C                   KFLD                    SairId            5
+     C     kSfltAir      KLIST
+     C                   KFLD                    SfltOrigin       20
+     C                   KFLD                    SfltDest         20
+     C                   KFLD                    SfltDepD
+     C                   KFLD                    SfltStatus        1
+     C     *ENTRY        PLIST
+     C                   PARM                    CallingMod       10
+     C                   PARM                    Action           10
+     C                   PARM                    pAirId            5
+     C                   PARM                    pusrId            5
+      /free
+      //main code
+      //if air id is passed as parameter use it
+        if pairId <> *blanks;
+           airds.airId = pairId;
+           flids.airId = pairId;
+        endif;
+        //validate if action and calling module passed from calling program
+        valid = 0;
+        valid = VACTIONRP(Action:CallingMod);
+        if valid = 1;
+          select;
+          when Action = list;
+            if CallingMod = admin;
+              exsr ListFltFun;
+            elseif CallingMod = air    ;
+              //exsr ListFltAir;
+            endif;
+           endsl;
+        endif;
+        *inlr = *on;
+        return;
+
+        begsr ListFltFun;
+         error = 0;
+         status = 'A'     ;
+         DoW *IN03 = *OFF;
+           if error = 0;
+              exsr rfrshLst1; //clear subfile
+              exsr loadSfl1; //load subfile
+           endif;
+           *in90 = *on;
+           exsr dspHdrFtr;
+           exsr dspLstScr; //writing the sflctl recordformat
+           if *in03 = *on;
+              leave;
+           endif;
+           if *in04 = *on;
+              if status = 'I';
+                 status = 'A';
+              else;
+                 status = 'I';
+              endif;
+              iter;
+           endif;
+           if *in05 = *on;
+              iter;
+           endif;
+           error = 0;
+           for i = 1 to sflLastRrn;
+               readc FLTLISTR;
+               if %eof();
+                  leave;
+               endif;
+               *in41 = *off;
+               if dOpt = '2';
+               elseif dOpt = '5';
+               else;
+                *in31 = *on; //setting on the reverse image indicator for
+                update FLTLISTR;
+                error = 1;
+               endif;
+             endfor;
+           enddo;
+        endsr;
+        begsr rfrshLst1;
+         *in = *off;
+         sflrrn = 0;
+         *in70 = *on; //SFLCLR
+         WRITE FLTCTLR;
+         *in70 = *off;
+        endsr;
+        begsr dsplstscr;
+         exfmt FLTCTLR;
+        endsr;
+        begsr loadSfl1;
+         fliDs3.fltStatus = status;
+         if %trim(posToId) <> *blanks;
+           fliDs3.fltId     = postoid;
+           setll kfltD3 FLIG3  ;
+         else;
+           fliDs3.fltId     = *blanks;
+           setll status FLIG3   ;
+         endif;
+         reade status FLIG3 fliDs3   ;
+         dow not %eof(FLIGHTL3) and sflrrn < 1000;
+           sflrrn += 1;
+           dListDs.dfltId = flids3.fltId;
+           dListDs.dairId = flids3.airId;
+           dListDs.dfltOrigin = flids3.fltOrigin;
+           dListDs.dfltDest   = flids3.fltDest  ;
+           if flids3.fltStatus = 'I';
+              dlistDs.cfltStatus = 'Inactive';
+           else;
+              dlistDs.cfltStatus = 'Active';
+           endif;
+           write FLTLISTR dListDs;
+           reade status FLIG3 fliDs3 ;
+        enddo;
+        sflLastrrn = sflrrn;
+        if sflrrn >=1;
+          *in71 = *on; //SFLDSP = *ON
+          *in72 = *on; //SFLDSPCTL = *ON
+        else;
+          *in71 = *off; //SFLDSP = *OFF
+          *in72 = *on; //SFLDSPCTL = *ON
+        endif;
+        if %eof(FLIGHTL3);
+           *in99 = *on;  // SFLEND
+        else;
+           *in99 = *off;
+        endif;
+       endsr;
+       begsr dspHdrFtr;
+        sysdate = %date();
+        systime = %time();
+        dUser = pusrId;
+        WRITE FLTHDR;
+        WRITE FLTFOOTR;
+       endsr;

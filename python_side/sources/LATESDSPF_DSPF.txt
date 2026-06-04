@@ -1,0 +1,84 @@
+     A*%%TS  SD  20250706  071116  VAVAN       REL-V7R5M0  5770-WDS
+     A*%%EC
+     A                                      DSPSIZ(24 80 *DS3)
+     A                                      REF(*LIBL/FLIGHTPF)
+     A                                      INDARA
+     A                                      PRINT
+     A                                      CF03(03 'Exit')
+     A                                      CF11(11 'Take other opts')
+     A                                      ROLLUP
+     A                                      ROLLDOWN
+     A******************************************************************
+      * HEADER AND FOOTER
+     A******************************************************************
+     A          R LATHDR
+     A                                       OVERLAY
+     A                                  1  2'User:'
+     A            DUSER          5A  O  1  8
+     A                                  1 24'Domestic Flight Booking System'
+     A                                  2 24'ARIANO'
+     A                                  1 65'Date:'
+     A            SYSDATE         L  O  1 71
+     A                                       DATFMT(*YMD)
+     A                                       DATSEP('/')
+     A                                  2 65'Time:'
+     A            SYSTIME         T  O  2 71TIMFMT(*HMS)
+     A                                      TIMSEP(':')
+     A                                  3  1'--------------------Latest flight+
+     A                                        status--------------------------'
+     A          R LATFOOTR
+     A                                       OVERLAY
+     A
+     A                                 23  2'F3=Exit'
+     A*                                23  2'F3=Exit F4=Prompt F5=Refresh +
+     A*a                                     F12=Cancel'
+     A******************************************************************
+      * FLIGHT LIST SUBFILE - ADMIN VIEW
+      ******************************************************************
+     A          R LATLISTR                   SFL
+     A            DFLTID    R        O 10  5 REFFLD(FLTID)
+     A            DAIRID    R        O 10 15 REFFLD(AIRID)
+     A            DFLTORIGINR        O 10 23 REFFLD(FLTORIGIN)
+     A            DFLTDEST  R        O 10 45 REFFLD(FLTDEST)
+     A            CFLTSTATUS     8A  O 10 67
+     A*
+     A          R LATCTLR                    SFLCTL(LATLISTR)
+     A                                       OVERLAY
+     A                                       RTNCSRLOC(&RCD &FLD &POS)
+     A                                       SFLPAG(10)
+     A                                       SFLSIZ(9999)
+     A  99                                   SFLEND
+     A  70                                   SFLCLR
+     A  71                                   SFLDSP
+     A  72                                   SFLDSPCTL
+     A            RCD           10A  H
+     A            FLD           10A  H
+     A            POS            4S 0H
+     A            SFLRRN         4S 0H
+     A*                                 8  1'Opt Flight Id Airline Origin '
+     A                                  8  1'Opt'
+     A                                  8  5'Flight Id'
+     A                                  8 15'Airline'
+     A                                  8 23'Origin'
+     A                                  8 45'Destination'
+     A                                  8 67'Status'
+     A                                  9  1'---'
+     A                                  9  5'---------'
+     A                                  9 15'-------'
+     A                                  9 23'------'
+     A                                  9 45'-----------'
+     A                                  9 67'-------'
+     A            TAKEOPT       20A  B  4 12
+     A                                       DFTVAL('Take other options')
+     a                                       DSPATR(RI)
+     a                                       DSPATR(PR)
+     A                                       COLOR(PNK)
+     A                                  5 55'Position To:'
+     A            POSTOID   R        B  5 68 REFFLD(FLTID)
+     A******************************************************************
+     A* NO RECORDS
+     A******************************************************************
+     A          R NORCDR
+     A*                                      KEEP
+     A                                       OVERLAY
+     A                                 15  2'No records'
